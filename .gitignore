@@ -1,0 +1,32 @@
+# Editor / IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+*.swp
+.DS_Store
+
+# Dart / Flutter tool caches and generated files
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# Android build outputs and local machine properties
+android/.gradle/
+android/.kotlin/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/local.properties
+android/**/build/
+android/captures/
+android/*.jks
+
+# orbital_core resolves independently; its lockfile is not authoritative
+# for the application build (see REQ-INF-001.10 edge case on lockfile drift).
+packages/orbital_core/pubspec.lock
+packages/orbital_core/.dart_tool/
