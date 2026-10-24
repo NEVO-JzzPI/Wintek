@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: 3.47.1
+  DART_VERSION: 3.13.1
+
+jobs:
+  app:
+    name: app-gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Flutter
+        run: |
+          git clone --depth 1 --branch "$FLUTTER_VERSION" https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Verify toolchain versions
+        run: |
+          flutter --version | head -n 1 | grep -F "Flutter $FLUTTER_VERSION "
+          test "$(dart --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)" = "$DART_VERSION"
+      - name: Resolve app dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Resolve orbital_core dependencies
+        run: dart pub get
+        working-directory: packages/orbital_core
+      - name: Format
+        run: dart format --set-exit-if-changed .
+      - name: Analyze
+        run: flutter analyze --fatal-infos --fatal-warnings
+      - name: Test
+        run: flutter test
+
+  orbital_core:
+    name: orbital-core-gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: packages/orbital_core
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Dart
+        run: |
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/dartsdk.zip" "https://storage.googleapis.com/dart-archive/channels/stable/release/$DART_VERSION/sdk/dartsdk-linux-x64-release.zip"
+          unzip -q "$RUNNER_TEMP/dartsdk.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/dart-sdk/bin" >> "$GITHUB_PATH"
+      - name: Assert Flutter is absent
+        run: |
+          if command -v flutter; then echo "Flutter is on PATH; the orbital_core job must be Dart-only (Constitution principle 3)." >&2; exit 1; fi
+      - name: Verify toolchain versions
+        run: |
+          test "$(dart --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)" = "$DART_VERSION"
+      - name: Resolve dependencies
+        run: dart pub get
+      - name: Analyze
+        run: dart analyze --fatal-infos
+      - name: Test
+        run: dart test
