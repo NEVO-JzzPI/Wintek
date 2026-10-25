@@ -27,3 +27,4 @@ Al invocarse este skill con el spec `$ARGUMENTS`, sigue este flujo:
 ## Restricciones Absolutas
 - Cero alucinaciones: Si necesitas una librería que no está en `ADR-0001-baseline-packages.md`, debes detenerte y pedir permiso al usuario. NO la instales por tu cuenta.
 - No modifiques archivos fuera del alcance de `specs/$ARGUMENTS.md`.
+- No hagas nada de commits o push. Solo escribe el código necesario para pasar los tests. (esa tarea la realiza /git-manager)
