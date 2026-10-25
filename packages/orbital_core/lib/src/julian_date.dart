@@ -32,15 +32,18 @@ final class JulianDate {
   /// Throws an [ArgumentError] when [utc] is not flagged as UTC or lies
   /// outside the valid range.
   factory JulianDate.fromUtc(DateTime utc) {
+    // if the value is not UTC
     if (!utc.isUtc) {
       throw ArgumentError('Julian date conversion requires a UTC instant.');
     }
+    // if the value is outside the valid range
     if (utc.isBefore(_firstValidInstant) || utc.isAfter(_lastValidInstant)) {
       throw ArgumentError(
         'Julian date conversion supports 1900-03-01T00:00:00.000000Z '
         'through 2100-02-28T23:59:59.999999Z only.',
       );
     }
+    // Vallado, Fundamentals of Astrodynamics and Applications, 4th ed., chapter 3, Algorithm 14, p. 183.
     final year = utc.year;
     final month = utc.month;
     final dayPart =
