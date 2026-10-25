@@ -7,7 +7,7 @@ Strict build order: every row is one future `specs/<id>.md` and one pull request
 [X]| req-inf-001 | Monorepo scaffold | Create the Flutter app and `packages/orbital_core` with the ADR-0001 dependencies, so both test suites run and principle 3 holds from the first commit. |
 [X]| req-inf-002 | CI quality gates | Run format, analyze and both suites on every PR, so every later spec is verified by machine instead of by hand. |
 [X]| req-orb-001 | Julian date and UTC time base | Convert UTC instants to Julian date and centuries, the time input every later formula depends on. |
-[]| req-orb-002 | GMST from Julian date | Produce Earth's rotation angle, without which inertial coordinates can never become Earth-fixed ones. |
+[X]| req-orb-002 | GMST from Julian date | Produce Earth's rotation angle, without which inertial coordinates can never become Earth-fixed ones. |
 | req-orb-003 | Orbital elements model and TLE parser | Define the immutable element set in radians and seconds with checksum validation, the single input type of every propagator. |
 | req-orb-004 | Kepler equation solver | Advance mean anomaly to time t and solve `M = E - e·sin E` by Newton-Raphson, the heart of the in-house propagator. |
 | req-orb-005 | Perifocal to inertial state vector | Derive `a` from `n`, place the object in its orbital plane and rotate it by R₃(−Ω)·R₁(−i)·R₃(−ω) to obtain an inertial position and velocity. |
