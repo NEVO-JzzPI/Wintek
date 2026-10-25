@@ -31,6 +31,7 @@ jobs:
         run: |
           git clone --depth 1 --branch "$FLUTTER_VERSION" https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/flutter/bin/flutter" --version
       - name: Verify toolchain versions
         run: |
           flutter --version | head -n 1 | grep -F "Flutter $FLUTTER_VERSION "
