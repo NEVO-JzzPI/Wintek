@@ -9,6 +9,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/repo_root.dart';
+
 const String _principle3 =
     'Violates Constitution principle 3 (the math core is pure Dart) — see docs/adr/ADR-0001-baseline-packages.md.';
 
@@ -23,28 +25,6 @@ const Set<String> _allowedAppRuntimeDeps = {
 const Set<String> _allowedAppDevDeps = {'flutter_test', 'flutter_lints'};
 
 const Set<String> _allowedCoreDevDeps = {'lints', 'test'};
-
-/// Finds the repository root by walking up from this test file's own
-/// location (via [Platform.script]) until a directory containing
-/// `AGENTS.md` is found, so the guard does not depend on the working
-/// directory it is invoked from. `flutter test` does not always preserve
-/// the `test/` segment of [Platform.script], so a fixed parent count is
-/// not reliable; searching for the governance-document marker is.
-Directory _repoRoot() {
-  final scriptPath = Platform.script.toFilePath();
-  var candidate = File(scriptPath).parent;
-  for (var i = 0; i < 10; i++) {
-    if (File('${candidate.path}/AGENTS.md').existsSync()) {
-      return candidate;
-    }
-    final parent = candidate.parent;
-    if (parent.path == candidate.path) break;
-    candidate = parent;
-  }
-  fail(
-    'Cannot resolve the repository root (no AGENTS.md found above $scriptPath). $_principle3',
-  );
-}
 
 /// Returns the set of top-level dependency names declared directly under
 /// [sectionName] (a two-space-indented key, not a nested field).
@@ -73,7 +53,7 @@ Set<String> _topLevelKeysUnderSection(String yamlContent, String sectionName) {
 }
 
 void main() {
-  final repoRoot = _repoRoot();
+  final repoRoot = findRepoRoot(failureSuffix: _principle3);
 
   test('app manifest declares no dependency outside the ADR-0001 baseline', () {
     final manifestFile = File('${repoRoot.path}/pubspec.yaml');
