@@ -27,7 +27,8 @@ Al invocarse este skill con el ID `$ARGUMENTS`, ejecuta esta secuencia estricta:
    - ¿Esta tarea viola algún principio de la Constitución?
    - ¿Requiere dependencias no listadas en el ADR-0001?
    - ¿Estoy intentando programar lógica matemática en un paso donde no corresponde?
-3. **Generación del Archivo:** Redacta el archivo en `specs/$ARGUMENTS.md` íntegramente en INGLÉS, usando esta estructura:
+3. **Consultas** Realiza preguntas al usuario si necesitas aclarar el alcance, los criterios de aceptación o los casos de prueba. No continúes hasta que todas las dudas estén resueltas.
+4. **Generación del Archivo:** Redacta el archivo en `specs/$ARGUMENTS.md` íntegramente en INGLÉS, usando esta estructura:
    - **Context & Objective:** Dependencias y valor de la tarea.
    - **Functional Requirements (REQ-x):** Criterios de aceptación verificables.
    - **Mathematical Validation / Testing:** Comandos exactos de consola para probarlo.
@@ -35,6 +36,7 @@ Al invocarse este skill con el ID `$ARGUMENTS`, ejecuta esta secuencia estricta:
    - **Out of Scope:** Qué NO se debe programar.
 
 ## Restricciones Absolutas
+- Detente, NO crees el archivo hasta que todas las preguntas de clarificación estén respondidas y el usuario lo autorice.
 - DEFINE EL QUÉ Y EL POR QUÉ. Prohibido escribir código fuente, clases o variables en el spec.
 - No uses parsers YAML externos en los tests.
 - Asegura que cualquier prueba estructural no contamine paquetes de Dart puro con `dart:io`.
