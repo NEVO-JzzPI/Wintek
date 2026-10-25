@@ -27,6 +27,7 @@ Architecture: feature-first layers (`domain` / `data` / `presentation`), Riverpo
 - Fetch from CelesTrak at most once every few hours per dataset; never poll it.
 - Do not add a 3D engine, WebView or new data sources (e.g. NASA NeoWs) without asking.
 - Keep the Wintek name's Selk'nam origin explained in About/README, and do not use Selk'nam symbols as decoration.
+- When a spec requires documentation lines (for example a model, a range or a reference), it fixes them word for word and a guard test checks them. This looks like bureaucracy, but it is the only way a machine can prove that someone documented the model. If the contract changes, change the spec first, then the documentation and the guard together.
 ## When finishing any task
 - Run `dart format --set-exit-if-changed .`, `flutter analyze` (zero warnings) and both test suites; all must pass.
 - Confirm the task's acceptance criteria in the active spec are met and mark its progress.
