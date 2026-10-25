@@ -34,3 +34,4 @@ Analiza el spec línea por línea y genera un reporte de vulnerabilidades buscan
 Devuelve estrictamente una lista numerada categorizada.
 - Si encuentras un error grave (bloqueante), márcalo con `[CRÍTICO]`.
 - NO corrijas el archivo original. Solo entrégame el reporte de fallos para que el usuario tome la decisión.
+- Una vez validado Marca con un [X] el spec en el roadmap, y si no, deja un [ ] para que el usuario lo haga manualmente.
