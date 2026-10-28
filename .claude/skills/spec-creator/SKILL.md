@@ -28,7 +28,8 @@ Al invocarse este skill con el ID `$ARGUMENTS`, ejecuta esta secuencia estricta:
    - ¿Requiere dependencias no listadas en el ADR-0001?
    - ¿Estoy intentando programar lógica matemática en un paso donde no corresponde?
 3. **Consultas** Realiza preguntas al usuario si necesitas aclarar el alcance, los criterios de aceptación o los casos de prueba. No continúes hasta que todas las dudas estén resueltas.
-4. **Generación del Archivo:** Redacta el archivo en `specs/$ARGUMENTS.md` íntegramente en INGLÉS, usando esta estructura:
+4. **Crear branch** crea un branch de git con el nombre `spec/$ARGUMENTS` para que el usuario pueda trabajar en paralelo sin afectar la rama principal.
+5. **Generación del Archivo:** Redacta el archivo en `specs/$ARGUMENTS.md` íntegramente en INGLÉS, usando esta estructura:
    - **Context & Objective:** Dependencias y valor de la tarea.
    - **Functional Requirements (REQ-x):** Criterios de aceptación verificables.
    - **Mathematical Validation / Testing:** Comandos exactos de consola para probarlo.
