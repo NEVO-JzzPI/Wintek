@@ -25,6 +25,9 @@ const String _skipToken =
 const String _platformScriptToken =
     'Platform'
     '.script';
+const String _copyWithToken =
+    'copy'
+    'With';
 
 const List<String> _mutableLinePrefixes = ['set ', 'var ', 'late '];
 
@@ -37,6 +40,22 @@ const List<String> _elementsContractLines = [
   '/// Units: radians, seconds and radians per second; B* in inverse Earth radii.',
   '/// Mean motion: the Kozai mean motion published in the TLE.',
   '/// Mean motion terms: the TLE values of ndot / 2 and nddot / 6, in SI units.',
+];
+
+const List<String> _publicDeclarations = [
+  'final class OrbitalElements',
+  'factory OrbitalElements.fromTle(String line1, String line2)',
+  'int get catalogNumber',
+  'DateTime get epoch',
+  'double get inclinationRad',
+  'double get raanRad',
+  'double get eccentricity',
+  'double get argumentOfPerigeeRad',
+  'double get meanAnomalyRad',
+  'double get meanMotionRadS',
+  'double get ndotOver2RadS2',
+  'double get nddotOver6RadS3',
+  'double get bstarInverseEarthRadii',
 ];
 
 const List<String> _parserContractLines = [
@@ -115,6 +134,23 @@ void _checkLines(
   }
 }
 
+/// Records a problem for each of [declarations] that no trimmed line of
+/// [lines] starts with, followed by a character that cannot continue a name.
+void _checkDeclarations(
+  List<String> lines,
+  List<String> declarations,
+  String fileLabel,
+  List<String> problems,
+) {
+  final trimmed = lines.map((line) => line.trim()).toList();
+  for (final declaration in declarations) {
+    final pattern = RegExp('^${RegExp.escape(declaration)}(?![A-Za-z0-9_\$])');
+    if (!trimmed.any(pattern.hasMatch)) {
+      problems.add('$fileLabel has no declaration "$declaration".');
+    }
+  }
+}
+
 /// Checks that line `// REQ-ORB-003.n` is followed by a line that starts with
 /// one of [openers].
 void _checkMarker(
@@ -168,6 +204,9 @@ void main() {
           problems.add('$_elementsLibPath has a mutable declaration: "$line".');
         }
       }
+      if (lines.join('\n').contains(_copyWithToken)) {
+        problems.add('$_elementsLibPath must not offer a copy method.');
+      }
     }
 
     if (problems.isNotEmpty) _failWith(6, problems);
@@ -183,6 +222,12 @@ void main() {
       _checkLines(
         elementsLines,
         _elementsContractLines,
+        _elementsLibPath,
+        problems,
+      );
+      _checkDeclarations(
+        elementsLines,
+        _publicDeclarations,
         _elementsLibPath,
         problems,
       );
