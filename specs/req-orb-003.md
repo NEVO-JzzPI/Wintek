@@ -1,10 +1,10 @@
 # req-orb-003 — Orbital elements model and TLE parser
 
-- **Status:** Draft (revision 2, after QA audit). Every published value was checked against a freely available primary source while drafting (see Definitions).
+- **Status:** Implemented (revision 3, after the second QA audit). Validated when the validation pull request of the Delivery record merges and QA checks the roadmap row. Every published value was checked against a freely available primary source while drafting (see Definitions).
 - **Roadmap row:** 5 of 33 (MVP)
 - **Blocks:** req-orb-004 (Kepler equation solver), req-orb-005 (perifocal to inertial state vector), req-orb-009 (propagator interface), req-orb-010 (SGP4 adapter), req-dat-002 (CelesTrak GP client, which hands TLE text to this parser under ADR-0003)
 - **Depends on:** req-orb-001 (UTC time base and Julian date), req-inf-002 (CI quality gates), ADR-0001 (baseline packages), ADR-0003 (TLE element sets and their units)
-- **ADR:** ADR-0003 fixes the TLE input format and the bounded exception to Constitution principle 12 for B\*. It must be accepted by the developer before the implementation pull request merges. The work uses only the Dart core library inside `packages/orbital_core` and adds no dependency to either `pubspec.yaml`, so ADR-0001 is unchanged.
+- **ADR:** ADR-0003 fixes the TLE input format and the bounded exception to Constitution principle 12 for B\*. It was accepted by the developer on 2026-10-28 (see the Delivery record). The work uses only the Dart core library inside `packages/orbital_core` and adds no dependency to either `pubspec.yaml`, so ADR-0001 is unchanged.
 
 ## Context & Objective
 
@@ -189,11 +189,14 @@ FIELD is the field name of the field table, written exactly as there.
 
 ### REQ-ORB-003.6 — Immutability
 
-An element set never changes after it is created: it has no setter and no field that can be reassigned. Methods that return a new element set with some values changed are allowed, because they leave the original untouched.
+An element set never changes after it is created: it has no setter and no field that can be reassigned. The only way to obtain an element set is `OrbitalElements.fromTle` (REQ-ORB-003.7); no other constructor and no method, including a method that returns a copy with some values changed, produces one, because that would be a public way to build an element set from plain values (Out of Scope) that skips the validation of REQ-ORB-003.3 to REQ-ORB-003.5.
 
-**Acceptance (verified by the guard test file).** No line of the elements library file, with leading and trailing spaces removed, starts with `set `, `var ` or `late `.
+**Acceptance (verified by the guard test file).**
 
-**Acceptance (verified by review, item R1 of the pull request checklist).** The reviewer confirms, by reading the elements library file, that every field of the element set is final and that no setter exists. The guard catches the common forms; the review catches the rest (for example, a non-final field declared with an explicit type).
+- No line of the elements library file, with leading and trailing spaces removed, starts with `set `, `var ` or `late `.
+- The elements library file does not contain the substring `copyWith`.
+
+**Acceptance (verified by review, item R1 of the pull request checklist).** The reviewer confirms, by reading the elements library file, that every field of the element set is final, that no setter exists, and that no public constructor or method other than `OrbitalElements.fromTle` produces an element set. The guard catches the common forms; the review catches the rest (for example, a non-final field declared with an explicit type).
 
 ### REQ-ORB-003.7 — Placement and documented contract
 
@@ -211,6 +214,20 @@ The element set lives in the elements library file and the parser in the parser 
   - `/// Epoch years: 57 to 99 are 1957 to 1999; 00 to 56 are 2000 to 2056.`
   - `/// Checksum: digits count their value, minus signs count 1, all else 0, modulo 10.`
   - `/// Reference: CelesTrak, NORAD Two-Line Element Set Format.`
+- **Public surface.** The elements library file contains, for each declaration below, a line that, with leading and trailing spaces removed, starts with the declaration and continues with a character that is not a letter, a digit, `_` or `$` (or ends there). These names are the contract that req-orb-004, req-orb-005, req-orb-009 and req-orb-010 read; each carries its unit as Constitution principle 12 requires, and `bstarInverseEarthRadii` is the name ADR-0003 decision 2 requires for B\*.
+  - `final class OrbitalElements`
+  - `factory OrbitalElements.fromTle(String line1, String line2)`
+  - `int get catalogNumber`
+  - `DateTime get epoch`
+  - `double get inclinationRad`
+  - `double get raanRad`
+  - `double get eccentricity`
+  - `double get argumentOfPerigeeRad`
+  - `double get meanAnomalyRad`
+  - `double get meanMotionRadS`
+  - `double get ndotOver2RadS2`
+  - `double get nddotOver6RadS3`
+  - `double get bstarInverseEarthRadii`
 
 ### REQ-ORB-003.8 — Purity, citations and test hygiene
 
@@ -226,8 +243,8 @@ The element set and the parser add no dependency, every published value is cited
   - `// Vallado et al., Revisiting Spacetrack Report #3, AIAA 2006-6753, SGP4-VER.TLE: sets 00005, 23599 and 28129.`
   - `// Vallado et al., AIAA 2006-6753, SGP4.cpp twoline2rv: deg2rad = pi / 180, xpdotp = 1440 / (2 pi), years below 57 are 2000 + yy.`
   - `// Vallado et al., AIAA 2006-6753, TestSGP4/00005.e, 23599.e, 28129.e: ScenarioEpoch of each set.`
-- The math test file contains, for each N from 1 to 5, a line equal to `// REQ-ORB-003.N` after trimming, and the next non-empty line after it starts with `test(` or `group(`.
-- The guard test file contains, for each N in {6, 7, 8}, a line equal to `// REQ-ORB-003.N` after trimming, and the next non-empty line after it starts with `test(`.
+- The math test file contains, for each N from 1 to 5, a line equal to `// REQ-ORB-003.N` after trimming, and the next non-empty line after it, with leading and trailing spaces removed, starts with `test(` or `group(`.
+- The guard test file contains, for each N in {6, 7, 8}, a line equal to `// REQ-ORB-003.N` after trimming, and the next non-empty line after it, with leading and trailing spaces removed, starts with `test(`.
 - Neither the math test file nor the guard test file contains the substring `skip:`.
 - None of the math test file, the guard test file and the core library files contains the byte `0D` (CR), and none starts with the bytes `EF BB BF` (UTF-8 BOM).
 - The guard test file contains the line `import 'support/repo_root.dart';` and does not contain the substring `Platform.script`.
@@ -286,7 +303,7 @@ These run after both test files are committed on the feature branch. For each ro
 | G12 | Add `import '../lib/orbital_core.dart';` to the math test file | `[REQ-ORB-003.8]` |
 | G13 | Add `import 'package:orbital_core/src/tle_parser.dart';` to the math test file | `[REQ-ORB-003.8]` |
 | G14 | Add `import 'dart:io';` to the math test file | `[REQ-ORB-003.8]` |
-| G15 | Replace `// REQ-ORB-003.3` with `// REQ-ORB-003.x` in the math test file | `[REQ-ORB-003.8]` |
+| G15 | Replace every occurrence of `// REQ-ORB-003.3` with `// REQ-ORB-003.x` in the math test file | `[REQ-ORB-003.8]` |
 | G16 | Insert the line `print(0);` right after the line `// REQ-ORB-003.1` in the math test file | `[REQ-ORB-003.8]` |
 | G17 | Delete the CelesTrak citation line of REQ-ORB-003.8 from the math test file | `[REQ-ORB-003.8]` |
 | G18 | Delete the `SGP4-VER.TLE` citation line of REQ-ORB-003.8 from the math test file | `[REQ-ORB-003.8]` |
@@ -304,10 +321,21 @@ These run after both test files are committed on the feature branch. For each ro
 | G30 | Append the line `  var mutable = 0;` to the elements library file | `[REQ-ORB-003.6]` |
 | G31 | Append the line `  set mutable(double value) {}` to the elements library file | `[REQ-ORB-003.6]` |
 | G32 | Append the line `  late double mutable;` to the elements library file | `[REQ-ORB-003.6]` |
+| G33 | Append the line `  OrbitalElements copyWith() => this;` to the elements library file | `[REQ-ORB-003.6]` |
+| G34 | In the elements library file, replace `double get raanRad` with `double get raan` | `[REQ-ORB-003.7]` |
 
-**Pull request checklist.** The description of the pull request that closes this spec lists V1–V9 and G1–G32, each with its observed result, and the review item below. A pull request without this list is incomplete regardless of its check status.
+### Delivery record
 
-- **R1:** the reviewer confirms REQ-ORB-003.6 (review acceptance): every field of the element set is final and no setter exists. Methods that return a changed copy are allowed.
+The implementation of revision 2 landed on `main` in commit aab0c6b on 2026-10-28 without a pull request, in the same commit as this spec, ADR-0003 and a checked roadmap row, which Out of Scope forbids, and before ADR-0003 was accepted. The commit is not reverted. The deviation is regularized by one validation pull request from the branch `docs/req-orb-003` to `main`, which:
+
+- carries revision 3 of this spec, the acceptance of ADR-0003 and the guard test file of revision 3;
+- unchecks the roadmap row of this spec;
+- changes no file under `packages/orbital_core`;
+- carries the pull request checklist below in its description.
+
+**Pull request checklist.** The description of the validation pull request lists V1–V9 and G1–G34, each with its observed result, and the review item below. A pull request without this list is incomplete regardless of its check status.
+
+- **R1:** the reviewer confirms REQ-ORB-003.6 (review acceptance): every field of the element set is final, no setter exists, and no public constructor or method other than `OrbitalElements.fromTle` produces an element set.
 
 ## Edge Cases & Errors
 
@@ -343,8 +371,8 @@ Nothing below is written in this pull request:
 - Any network, file or cache access (req-dat-002, req-dat-003).
 - Any change to the Julian date conversion of req-orb-001, to GMST of req-orb-002, or to their tests and guards.
 - Any code in the application `lib/`, any provider, widget or UI string.
-- Any change to `pubspec.yaml`, `packages/orbital_core/pubspec.yaml`, `.github/workflows/ci.yml`, `test/dependency_guard_test.dart`, `test/support/repo_root.dart`, the constitution, ADR-0001 or ADR-0002. ADR-0003 is written alongside this spec, not in the implementation pull request.
-- Any change to `docs/roadmap.md` in the implementation pull request. Its checkbox for this row is updated by the spec workflow (QA validation), outside this pull request.
+- Any change to `pubspec.yaml`, `packages/orbital_core/pubspec.yaml`, `.github/workflows/ci.yml`, `test/dependency_guard_test.dart`, `test/support/repo_root.dart`, the constitution, ADR-0001 or ADR-0002. ADR-0003 and this spec travel in the validation pull request of the Delivery record, never in a pull request that changes `packages/orbital_core/lib`.
+- Checking the roadmap row of this spec in any pull request of this spec. The validation pull request only unchecks it; the spec workflow (QA validation) checks it after that pull request merges.
 
 ## Open Questions
 

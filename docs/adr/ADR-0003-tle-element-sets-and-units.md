@@ -1,8 +1,8 @@
 # ADR-0003 — TLE element sets and their units
 
-- **Status:** Proposed (accepted when the developer approves it, before the req-orb-003 implementation merges)
+- **Status:** Accepted (2026-10-28, by the developer, after the implementation had landed in commit aab0c6b; see the Delivery record of `specs/req-orb-003.md`)
 - **Date:** 2026-10-26
-- **Relates to:** Constitution principles 1 (one stack, no new data sources), 6 (math is proven), 12 (English and explicit units); `specs/req-orb-003.md`; roadmap rows 5 (req-orb-003), 10 (req-orb-010) and 14 (req-dat-002)
+- **Relates to:** Constitution principles 1 (one stack, no new data sources), 6 (math is proven), 12 (English and explicit units); `specs/req-orb-003.md`; roadmap rows 5 (req-orb-003), 12 (req-orb-010) and 14 (req-dat-002)
 
 ## Context
 
@@ -15,7 +15,7 @@ Constitution principle 12 requires km, seconds and radians internally. Two value
 
 ## Decision
 
-1. **Input format.** `packages/orbital_core` reads NORAD Two-Line Element sets: exactly two lines, as defined by CelesTrak's "NORAD Two-Line Element Set Format". OMM in JSON or XML is not read by the core. The four tracked objects (ISS 25544, Tiangong 48274, FASat-Charlie 38011 and GOES-East) have five-digit catalog numbers, which TLE expresses without the Alpha-5 scheme.
+1. **Input format.** `packages/orbital_core` reads NORAD Two-Line Element sets: exactly two lines, as defined by CelesTrak's "NORAD Two-Line Element Set Format". OMM in JSON or XML is not read by the core. ISS (25544), Tiangong (48274) and FASat-Charlie (38011) have five-digit catalog numbers, which TLE expresses without the Alpha-5 scheme. The catalog number of GOES-East is fixed by req-dat-001, which must confirm that it has five digits or propose an ADR that supersedes this decision.
 2. **B\* unit exception.** B\* is stored as published, in inverse Earth radii. This is a bounded exception to principle 12 that covers this one value only. Its name must state the unit, as principle 12 requires when a unit is ambiguous.
 3. **Mean-motion terms.** ṅ/2 and n̈/6 are stored as the published values, converted to radians per second squared and radians per second cubed. They are not multiplied back to ṅ and n̈.
 
