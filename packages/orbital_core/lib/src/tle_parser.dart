@@ -20,6 +20,7 @@ final RegExp _meanMotionPattern = RegExp(r'^ *[0-9]+\.[0-9]{8}$');
 /// Epoch years: 57 to 99 are 1957 to 1999; 00 to 56 are 2000 to 2056.
 /// Checksum: digits count their value, minus signs count 1, all else 0, modulo 10.
 /// Reference: CelesTrak, NORAD Two-Line Element Set Format.
+
 typedef TleValues = ({
   int catalogNumber,
   DateTime epoch,
@@ -39,6 +40,7 @@ typedef TleValues = ({
 /// Throws a [FormatException] with an exact message when a line is not
 /// printable ASCII, has the wrong length, number or checksum, when the lines
 /// disagree on the catalog number, or when a field is malformed or out of range.
+/// clean Dates
 TleValues parseTleValues(String line1, String line2) {
   final first = _prepareLine(line1, 1);
   final second = _prepareLine(line2, 2);
@@ -63,6 +65,7 @@ TleValues parseTleValues(String line1, String line2) {
     ),
   );
   final ndotOver2 = _signedFraction(
+    //normalization of code.
     _field(
       first,
       1,
@@ -108,6 +111,7 @@ TleValues parseTleValues(String line1, String line2) {
       _anglePattern,
     ),
   );
+  //perturibing code 
   if (raanDeg >= 360.0) {
     throw _outOfRange(2, 'right ascension of the ascending node');
   }
