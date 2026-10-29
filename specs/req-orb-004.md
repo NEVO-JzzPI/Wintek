@@ -1,10 +1,10 @@
 # req-orb-004 — Kepler equation solver
 
-- **Status:** Draft (revision 2, after the first QA audit). Blocked on ADR-0004, which is Proposed; ready for implementation once the developer accepts it. Every published value was checked against a freely available primary source while drafting (see Definitions).
+- **Status:** Ready for implementation (revision 2, after the first QA audit). ADR-0004 was accepted by the developer on 2026-10-28. Every published value was checked against a freely available primary source while drafting (see Definitions).
 - **Roadmap row:** 6 of 33 (MVP)
 - **Blocks:** req-orb-005 (perifocal to inertial state vector, which needs E), req-orb-009 (propagator state carries M and E), req-mth-001 (math mode shows M and E)
 - **Depends on:** req-orb-001 (two-part Julian date), req-orb-003 (element set), req-inf-002 (CI quality gates), ADR-0001 (baseline packages), ADR-0003 (TLE element sets and their units), ADR-0004 (derived reference values for the linear mean anomaly)
-- **ADR:** ADR-0004 makes a bounded exception to Constitution principle 6 for the linear mean anomaly of REQ-ORB-004.2, which has no free published numeric example (QA audit, finding 5). The work uses only the Dart core library inside `packages/orbital_core` and adds no dependency to either `pubspec.yaml`, so ADR-0001 is unchanged. The reference values come from a repository licensed under AGPL-3.0; this spec and its tests cite published numbers and one line of the formula only, and copy no code from it.
+- **ADR:** ADR-0004 (accepted) makes a bounded exception to Constitution principle 6 for the linear mean anomaly of REQ-ORB-004.2, which has no free published numeric example (QA audit, finding 5). The work uses only the Dart core library inside `packages/orbital_core` and adds no dependency to either `pubspec.yaml`, so ADR-0001 is unchanged. The reference values come from a repository licensed under AGPL-3.0; this spec and its tests cite published numbers and one line of the formula only, and copy no code from it.
 
 ## Context & Objective
 
@@ -370,4 +370,4 @@ Nothing below is written in this pull request:
 
 ## Open Questions
 
-None. ADR-0004 is Proposed; until the developer accepts it, the Status line keeps this spec blocked.
+None.

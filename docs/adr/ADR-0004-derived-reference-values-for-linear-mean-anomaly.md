@@ -1,6 +1,6 @@
 # ADR-0004 — Derived reference values for the linear mean anomaly
 
-- **Status:** Proposed (2026-10-28). It needs the developer's approval before `specs/req-orb-004.md` is implemented.
+- **Status:** Accepted (2026-10-28, by the developer, before `specs/req-orb-004.md` was implemented)
 - **Date:** 2026-10-28
 - **Relates to:** Constitution principle 6 (math is proven, not trusted); `specs/req-orb-004.md`, REQ-ORB-004.2; roadmap row 6 (req-orb-004)
 
