@@ -1,10 +1,10 @@
 # req-orb-004 — Kepler equation solver
 
-- **Status:** Ready for implementation (revision 2, after the first QA audit). ADR-0004 was accepted by the developer on 2026-10-28. Every published value was checked against a freely available primary source while drafting (see Definitions).
+- **Status:** Revision 3, after the second QA audit; pending acceptance of Amendment 1 of ADR-0004 by the developer. Decisions 1 to 4 of ADR-0004 were accepted by the developer on 2026-10-28. Every published value was checked against a freely available primary source while drafting (see Definitions).
 - **Roadmap row:** 6 of 33 (MVP)
 - **Blocks:** req-orb-005 (perifocal to inertial state vector, which needs E), req-orb-009 (propagator state carries M and E), req-mth-001 (math mode shows M and E)
-- **Depends on:** req-orb-001 (two-part Julian date), req-orb-003 (element set), req-inf-002 (CI quality gates), ADR-0001 (baseline packages), ADR-0003 (TLE element sets and their units), ADR-0004 (derived reference values for the linear mean anomaly)
-- **ADR:** ADR-0004 (accepted) makes a bounded exception to Constitution principle 6 for the linear mean anomaly of REQ-ORB-004.2, which has no free published numeric example (QA audit, finding 5). The work uses only the Dart core library inside `packages/orbital_core` and adds no dependency to either `pubspec.yaml`, so ADR-0001 is unchanged. The reference values come from a repository licensed under AGPL-3.0; this spec and its tests cite published numbers and one line of the formula only, and copy no code from it.
+- **Depends on:** req-orb-001 (two-part Julian date), req-orb-003 (element set), req-inf-002 (CI quality gates), ADR-0001 (baseline packages), ADR-0003 (TLE element sets and their units), ADR-0004 (derived reference values for the linear mean anomaly and the elapsed time)
+- **ADR:** ADR-0004 makes a bounded exception to Constitution principle 6 for two formulas that have no free published numeric example: the linear mean anomaly of REQ-ORB-004.2 (decisions 1 to 4, accepted; first QA audit, finding 5) and the elapsed time of REQ-ORB-004.1 (Amendment 1, proposed; second QA audit, finding 2.1). The work uses only the Dart core library inside `packages/orbital_core` and adds no dependency to either `pubspec.yaml`, so ADR-0001 is unchanged. The reference values come from a repository licensed under AGPL-3.0; this spec and its tests cite published numbers and one line of the formula only, and copy no code from it.
 
 ## Context & Objective
 
@@ -15,7 +15,7 @@ The in-house Kepler propagator turns one element set into a position at any inst
 
 This spec delivers what roadmap row 6 names: advance the mean anomaly to a time t, and solve Kepler's equation by Newton-Raphson.
 
-It also delivers the signed elapsed time between two two-part Julian dates. req-orb-001 moved this here (its Out of Scope) because advancing M needs it. It is a time-base operation, not part of the solver, so it gets its own library file: req-tim-001 and req-orb-009 can then use it without depending on the solver.
+It also delivers the signed elapsed time between two two-part Julian dates. req-orb-001 moved this here (its Out of Scope) because advancing M needs it. It is a time-base operation, not part of the solver, so it gets its own library file: req-tim-001 and req-orb-009 can then use it without depending on the solver. Its reference values are derived under Amendment 1 of ADR-0004.
 
 The decisions below are fixed so later specs inherit them. The developer approved each one before drafting or during the QA audit.
 
@@ -71,17 +71,22 @@ These definitions are normative.
 
 Two two-part Julian dates yield the signed elapsed time from the first to the second, in seconds.
 
-**Acceptance (verified by the math test file).** Each instant is converted to a two-part Julian date by REQ-ORB-001.1 before the elapsed time is computed. Every row passes.
+**Acceptance (verified by the math test file).**
+
+- Each instant is converted to a two-part Julian date by REQ-ORB-001.1 before the elapsed time is computed.
+- Under Amendment 1 of ADR-0004, every row except the equal-dates row is marked "Derived". Its expected value comes from the whole days between the two dates and the difference of their clock times, written out in the Source column and multiplied by 86400 s per day. The implementation subtracts two-part Julian dates, so the derivation does not follow its path.
+- The equal-dates row is the anchor row of Amendment 1: it depends on no derivation.
+- Every row passes.
 
 | From (UTC) | To (UTC) | Elapsed time | Tolerance | Source |
 | --- | --- | --- | --- | --- |
-| 1987-01-27T00:00:00Z | 1988-01-27T00:00:00Z | 31536000.0 s | exact | Meeus: JD 2446822.5 to JD 2447187.5 is 365 days |
-| 1988-01-27T00:00:00Z | 1987-01-27T00:00:00Z | −31536000.0 s | exact | Same pair, reversed: the sign follows the order |
-| 1987-06-19T12:00:00Z | 1988-06-19T12:00:00Z | 31622400.0 s | exact | Meeus: JD 2446966.0 to JD 2447332.0 is 366 days |
-| 1999-01-01T00:00:00Z | 2000-01-01T12:00:00Z | 31579200.0 s | exact | Meeus: JD 2451179.5 to JD 2451545.0 is 365.5 days |
-| 2000-01-01T12:00:00Z | 2000-01-01T12:00:00Z | 0.0 s | exact | Equal dates |
-| 2026-03-14T00:00:00Z | 2026-03-14T00:00:00.000001Z | 0.000001 s | 1·10⁻¹² s | Definition of fraction part in req-orb-001 (microsecond resolution) |
-| 1900-03-01T00:00:00.000000Z | 2100-02-28T23:59:59.999999Z | 6311433599.999999 s | 1·10⁻⁵ s | Day parts 2415079.5 and 2488127.5 of REQ-ORB-001.4: 73048 days plus 86399.999999 s |
+| 1987-01-27T00:00:00Z | 1988-01-27T00:00:00Z | 31536000.0 s | exact | Derived: Meeus JD 2447187.5 − JD 2446822.5 = 365 days; 365 · 86400 s |
+| 1988-01-27T00:00:00Z | 1987-01-27T00:00:00Z | −31536000.0 s | exact | Derived: same pair, reversed; −365 · 86400 s (the sign follows the order) |
+| 1987-06-19T12:00:00Z | 1988-06-19T12:00:00Z | 31622400.0 s | exact | Derived: Meeus JD 2447332.0 − JD 2446966.0 = 366 days; 366 · 86400 s |
+| 1999-01-01T00:00:00Z | 2000-01-01T12:00:00Z | 31579200.0 s | exact | Derived: Meeus JD 2451545.0 − JD 2451179.5 = 365 days plus 12 h; 365.5 · 86400 s |
+| 2000-01-01T12:00:00Z | 2000-01-01T12:00:00Z | 0.0 s | exact | Anchor row of Amendment 1 of ADR-0004: equal dates |
+| 2026-03-14T00:00:00Z | 2026-03-14T00:00:00.000001Z | 0.000001 s | 1·10⁻¹² s | Derived: 0 days plus a clock difference of 0.000001 s (definition of fraction part in req-orb-001, microsecond resolution) |
+| 1900-03-01T00:00:00.000000Z | 2100-02-28T23:59:59.999999Z | 6311433599.999999 s | 1·10⁻⁵ s | Derived: day parts 2488127.5 − 2415079.5 of REQ-ORB-001.4 = 73048 days; 73048 · 86400 s plus a clock difference of 86399.999999 s |
 
 The tolerance of the last row covers the resolution of a double near 6.3·10⁹ s, about 9.5·10⁻⁷ s. Evaluated as Definitions fixes it, the error measured while drafting was 4.6·10⁻⁸ s.
 
@@ -102,13 +107,13 @@ An element set and a UTC instant yield the mean anomaly at that instant, before 
 | 00005 | 2000-06-28T18:50:19.733568Z | +1 day | 316.0353652° = 5.515857675482708 rad | Derived: 19.3264° + 10.82419157 rev/day · 360° · 1 day, minus 10 revolutions |
 | 00005 | 2000-06-26T18:50:19.733568Z | −1 day | 82.6174348° = 1.441946256811743 rad | Derived: 19.3264° − 10.82419157 · 360° · 1, plus 11 revolutions |
 | 00005 | 2000-06-28T06:50:19.733568Z | +12 hours | 167.6808826° = 2.9265834940200697 rad | Derived: 19.3264° + 10.82419157 · 360° · 0.5, minus 5 revolutions |
-| 28129 | 2006-07-24T13:41:49.461504Z | +30 days | 153.945244° = 2.6868513755860457 rad | Derived: 93.1663° + 2.00562768 · 360° · 30, minus 60 revolutions |
+| 28129 | 2006-07-24T13:41:49.461504Z | +30 days | 153.945244° = 2.6868513755860453 rad | Derived: 93.1663° + 2.00562768 · 360° · 30, minus 60 revolutions |
 | 28129 | 2006-05-25T13:41:49.461504Z | −30 days | 32.387356° = 0.5652659982155406 rad | Derived: 93.1663° − 2.00562768 · 360° · 30, plus 60 revolutions |
 
 - The first row is exact: at the epoch the elapsed time is 0.0, so the result equals the element set's mean anomaly with no tolerance.
 - For every row, the result is greater than or equal to 0.0 and strictly less than 2π (as a double).
 - The tolerance of 1·10⁻¹⁰ rad covers the rounding of n · Δt (about 380 rad for the 28129 rows), which is below 1·10⁻¹³ rad.
-- An instant that is not UTC, or lies outside the valid range, throws the `ArgumentError` of REQ-ORB-001.4 with its message unchanged:
+- With the element set 28129, an instant that is not UTC, or lies outside the valid range, throws the `ArgumentError` of REQ-ORB-001.4 with its message unchanged:
   - 2006-06-24 13:41:49 with the UTC flag false throws message U of req-orb-001;
   - 2100-03-01T00:00:00.000000Z throws message R of req-orb-001.
 
@@ -116,7 +121,7 @@ An element set and a UTC instant yield the mean anomaly at that instant, before 
 
 A mean anomaly and an eccentricity yield the eccentric anomaly that solves Kepler's equation.
 
-**Acceptance (verified by the math test file).** Every row passes within 1·10⁻¹¹ rad, the tolerance the Vallado repository uses for the same assertions. Values given in degrees are converted to radians by multiplying by π / 180.
+**Acceptance (verified by the math test file).** Every row passes within 1·10⁻¹¹ rad. This is the absolute tolerance with which `test_newtonm` asserts E (`atol=1e-11`). The rows read backwards from `test_newtone` and `test_newtonnu`, whose own assertions use the repository's default tolerance, adopt the same 1·10⁻¹¹ rad. Values given in degrees are converted to radians by multiplying by π / 180.
 
 | Mean anomaly | Eccentricity | Expected eccentric anomaly | Source (Vallado repository, `test_newton.py`) | Proves |
 | --- | --- | --- | --- | --- |
@@ -164,7 +169,7 @@ The solver accepts only a finite mean anomaly and a finite eccentricity from 0 i
 - **Message R-E:** `Kepler solver supports eccentricity from 0 inclusive to 1 exclusive only.`
 - **Message C:** `Kepler solver did not converge in 50 iterations.` This one is thrown as Dart's `StateError`, never as `ArgumentError`, because it reports a defect of the solver, not of the input.
 
-**Acceptance (verified by the math test file).** "Throws X" means the thrown object is an `ArgumentError` whose message is equal to message X, character for character.
+**Acceptance (verified by the math test file).** "Throws X" means the thrown object is an `ArgumentError` whose message is equal to message X, character for character. "Accepted" means the solver returns without throwing, the result is greater than or equal to 0.0 and strictly less than 2π (as a double), and the absolute value of the residual is at most 1·10⁻¹² rad, the three conditions of REQ-ORB-004.4.
 
 | Mean anomaly | Eccentricity | Expected |
 | --- | --- | --- |
@@ -226,7 +231,7 @@ The new code adds no dependency, every published value is cited in the math test
   - `// Vallado repository: https://github.com/CelesTrak/fundamentals-of-astrodynamics, software/python/tests/astro/twobody/test_newton.py, commit e90b6f6584dd53330e71ee5496aea2eea3853f9b.`
   - `// Vallado repository, test_newton.py, newtonm row "Vallado Ex. 2-1": M = 235.4 deg, e = 0.4, E = 3.8486617450971616 rad.`
   - `// Vallado repository, kepler.py, commit c05278b458e806775c91d1fe74b5ff6e583c8d82, line 217: linear mean anomaly; rows derived under ADR-0004.`
-  - `// Meeus, Astronomical Algorithms, 2nd ed., chapter 7: JD 2446822.5, 2447187.5, 2446966.0, 2447332.0, 2451179.5, 2451545.0.`
+  - `// Meeus, Astronomical Algorithms, 2nd ed., chapter 7: JD 2446822.5, 2447187.5, 2446966.0, 2447332.0, 2451179.5, 2451545.0; elapsed times derived under ADR-0004.`
   - `// Vallado et al., Revisiting Spacetrack Report #3, AIAA 2006-6753, SGP4-VER.TLE: sets 00005 and 28129.`
 - The math test file contains, for each N from 1 to 5, a line equal to `// REQ-ORB-004.N` after trimming. The next non-empty line after it, with leading and trailing spaces removed, starts with `test(` or `group(`.
 - The guard test file contains, for each N in {5, 6, 7}, a line equal to `// REQ-ORB-004.N` after trimming. The next non-empty line after it, with leading and trailing spaces removed, starts with `test(`.
@@ -244,7 +249,7 @@ The new code adds no dependency, every published value is cited in the math test
 Every published value is cited next to its assertion in the math test file by the citation lines of REQ-ORB-004.7, which the guard test file checks (Constitution principle 6). The sources are:
 
 - **Solver (REQ-ORB-004.3):** values published by the Vallado repository.
-- **Elapsed times (REQ-ORB-004.1):** differences of Meeus Julian dates already cited by req-orb-001.
+- **Elapsed times (REQ-ORB-004.1):** one anchor row, and rows derived under Amendment 1 of ADR-0004 from Meeus Julian dates already cited by req-orb-001 and from the day parts and fraction-part definition that req-orb-001 fixes.
 - **Mean anomalies (REQ-ORB-004.2):** one published anchor row, and rows derived from the published fields of Vallado's verification element sets under the bounded exception of ADR-0004. The formula's source is the pinned line of the Vallado repository.
 - **Grid (REQ-ORB-004.4):** checks Kepler's equation itself and introduces no new formula.
 
@@ -302,15 +307,15 @@ Inside the table, `\|` is a single pipe.
 | G16 | Delete the line `export 'src/elapsed_time.dart';` from the public library file | `[REQ-ORB-004.6]` |
 | G17 | Delete the file `packages/orbital_core/lib/src/kepler.dart` | `[REQ-ORB-004.6]` |
 | G18 | Delete the file `packages/orbital_core/lib/src/elapsed_time.dart` | `[REQ-ORB-004.6]` |
-| G19 | Replace `double eccentricAnomalyRad(` with `double eccentricAnomaly(` in the Kepler library file | `[REQ-ORB-004.6]` |
-| G20 | Replace `double meanAnomalyAtRad(` with `double meanAnomalyAt(` in the Kepler library file | `[REQ-ORB-004.6]` |
-| G21 | Replace `double elapsedSeconds(` with `double elapsedS(` in the elapsed-time library file | `[REQ-ORB-004.6]` |
+| G19 | Replace every occurrence of `double eccentricAnomalyRad(` with `double eccentricAnomaly(` in the Kepler library file | `[REQ-ORB-004.6]` |
+| G20 | Replace every occurrence of `double meanAnomalyAtRad(` with `double meanAnomalyAt(` in the Kepler library file | `[REQ-ORB-004.6]` |
+| G21 | Replace every occurrence of `double elapsedSeconds(` with `double elapsedS(` in the elapsed-time library file | `[REQ-ORB-004.6]` |
 | G22 | Replace `did not converge in 50 iterations.` with `did not converge.` in the Kepler library file | `[REQ-ORB-004.5]` |
 | G23 | Replace every `StateError(` with `Exception(` in the Kepler library file | `[REQ-ORB-004.5]` |
 | G24 | Add `import '../lib/orbital_core.dart';` to the math test file | `[REQ-ORB-004.7]` |
 | G25 | Add `import 'package:orbital_core/src/kepler.dart';` to the math test file | `[REQ-ORB-004.7]` |
 | G26 | Add `import 'dart:io';` to the math test file | `[REQ-ORB-004.7]` |
-| G27 | Replace `// REQ-ORB-004.3` with `// REQ-ORB-004.x` in the math test file | `[REQ-ORB-004.7]` |
+| G27 | Replace the line that equals `// REQ-ORB-004.3` after trimming with `// REQ-ORB-004.x`, keeping its indentation, in the math test file | `[REQ-ORB-004.7]` |
 | G28 | Insert the line `// note` directly after the line `// REQ-ORB-004.1` in the math test file | `[REQ-ORB-004.7]` |
 | G29 | Delete the citation line that starts with `// Vallado repository: https://` from the math test file | `[REQ-ORB-004.7]` |
 | G30 | Delete the citation line that starts with `// Vallado repository, test_newton.py, newtonm row` from the math test file | `[REQ-ORB-004.7]` |
@@ -322,7 +327,7 @@ Inside the table, `\|` is a single pipe.
 | G36 | Run `printf '\xEF\xBB\xBF' \| cat - packages/orbital_core/test/kepler_test.dart > /tmp/g36 && mv /tmp/g36 packages/orbital_core/test/kepler_test.dart` (BOM) | `[REQ-ORB-004.7]` |
 | G37 | Run `sed -i 's/$/\r/' specs/req-orb-004.md` (CRLF in the spec file) | `[REQ-ORB-004.7]` |
 | G38 | Append the line `// Platform.script` to the guard test file | `[REQ-ORB-004.7]` |
-| G39 | Replace `// REQ-ORB-004.6` with `// REQ-ORB-004.x` in the guard test file | `[REQ-ORB-004.7]` |
+| G39 | Replace the line that equals `// REQ-ORB-004.6` after trimming with `// REQ-ORB-004.x`, keeping its indentation, in the guard test file; any other text containing `// REQ-ORB-004.6`, such as a string literal, is left unchanged | `[REQ-ORB-004.7]` |
 | G40 | Delete the file `packages/orbital_core/test/kepler_test.dart` | `[REQ-ORB-004.7]` |
 
 No G row removes `import 'support/repo_root.dart';` from the guard test file. That edit stops the file from compiling, so V4 fails without printing any tag; the import line check is kept as a second line of defence.
