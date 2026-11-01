@@ -1,6 +1,6 @@
 # ADR-0004 — Derived reference values for the linear mean anomaly and the elapsed time
 
-- **Status:** Accepted (2026-10-28, by the developer, before `specs/req-orb-004.md` was implemented) for decisions 1 to 4. Amendment 1 (2026-11-01): Proposed, pending acceptance by the developer.
+- **Status:** Accepted (2026-10-28, by the developer, before `specs/req-orb-004.md` was implemented) for decisions 1 to 4. Amendment 1 (decisions 5 to 8): Accepted (2026-11-01, by the developer, before `specs/req-orb-004.md` was implemented).
 - **Date:** 2026-10-28; Amendment 1 on 2026-11-01
 - **Relates to:** Constitution principle 6 (math is proven, not trusted); `specs/req-orb-004.md`, REQ-ORB-004.1 and REQ-ORB-004.2; roadmap row 6 (req-orb-004)
 
