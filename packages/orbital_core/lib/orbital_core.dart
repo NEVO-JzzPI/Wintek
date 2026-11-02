@@ -1,3 +1,4 @@
+export 'src/earth_fixed.dart';
 export 'src/elapsed_time.dart';
 export 'src/gmst.dart';
 export 'src/julian_date.dart';
