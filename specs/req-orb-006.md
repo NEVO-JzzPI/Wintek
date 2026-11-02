@@ -1,6 +1,6 @@
 # req-orb-006 — Inertial to ECEF rotation
 
-- **Status:** Draft (revision 2, after the first QA audit: findings 1, 2 and 19), awaiting the second QA audit. The developer approved the scope, the input and the reference rows on 2026-11-01, before drafting. Every published value was checked against a freely available primary source while drafting (see Definitions).
+- **Status:** Ready for implementation (revision 3, after the second QA audit: findings 1, 2, 3, 4, 5, 8, 9 and 11). The developer approved the scope, the input and the reference rows on 2026-11-01, before drafting, and the revision 3 changes on 2026-11-02. Every published value was checked against a freely available primary source while drafting (see Definitions), and the second QA audit re-checked every value and cited line against the pinned commit.
 - **Roadmap row:** 8 of 33 (MVP)
 - **Blocks:** req-orb-007 (geodetic coordinates convert the Earth-fixed position defined here), req-orb-009 (the propagated state carries GMST and the Earth-fixed position), req-mth-001 (math mode shows the ECEF vector)
 - **Depends on:** req-orb-001 (two-part Julian date, used by the math test file to build GMST), req-orb-002 (GMST, IAU-82), req-orb-005 (`CartesianVector` and the inertial frame of the elements), req-inf-002 (CI quality gates), ADR-0001 (baseline packages)
@@ -157,7 +157,7 @@ The function lives in the Earth-fixed library file and is reachable through the 
 
 - The Earth-fixed library file exists.
 - The public library file contains the line `export 'src/earth_fixed.dart';`.
-- The Earth-fixed library file contains each of these six lines:
+- **Doc block.** The doc block of the function is the run of consecutive lines directly before the line `CartesianVector ecefPositionKm({` whose text, with leading and trailing spaces removed, starts with `///`. It contains each of these six lines, in any order:
   - `/// Rotation: r_ecef = R3(gmst) r_inertial, a rotation about the z axis.`
   - `/// Input frame: the inertial frame of the elements; TEME for elements read from a TLE.`
   - `/// Output frame: Earth-fixed axes without polar motion (PEF), used as ECEF.`
@@ -166,11 +166,9 @@ The function lives in the Earth-fixed library file and is reachable through the 
   - `/// Reference: CelesTrak fundamentals-of-astrodynamics, time/frame_conversions.py, teme2ecef (Vallado: 2022, p. 232-234).`
 - **Public name.** The line `CartesianVector ecefPositionKm({` must appear in the Earth-fixed library file, compared after trimming. This name is the contract that req-orb-007 and req-orb-009 read.
 - **Parameters.** The two lines directly after that line are, in this order and each equal after trimming: `required CartesianVector inertialPositionKm,` and `required double gmstRad,`. `dart format` always splits this declaration one parameter per line, because it does not fit within 80 columns.
-- **No new constant.** No line of the Earth-fixed library file starts, at its first column and with no spaces removed, with `const ` or `final `. `dart format` writes every top-level declaration at the first column, so the file declares no top-level constant or variable; local variables inside the function are indented and stay allowed.
+- **Single top-level declaration.** Every line of the Earth-fixed library file that has a character other than a space at its first column, compared with no spaces removed, starts with `//`, starts with `import '`, or is equal to one of `CartesianVector ecefPositionKm({`, `}) {` and `}`. Empty lines are allowed. `dart format` writes every top-level declaration at the first column and every line inside the function indented, so the file declares no top-level name other than `ecefPositionKm`: no constant, variable, class, enum, extension, typedef or second function, public or private. Local variables inside the function are indented and stay allowed.
 
-**Acceptance (verified by command V11).** This pull request changes none of `packages/orbital_core/lib/src/orbital_elements.dart`, `tle_parser.dart`, `julian_date.dart`, `gmst.dart`, `elapsed_time.dart`, `kepler.dart`, `perifocal.dart` and `state_vector.dart`.
-
-**Acceptance (verified by review, item R1 of the pull request checklist).** The reviewer confirms that the Earth-fixed library file declares no public top-level name other than `ecefPositionKm`.
+**Acceptance (verified by command V11).** Compared with `main`, this pull request adds or changes exactly four files and no other: the public library file, the Earth-fixed library file, the math test file and the guard test file. This enforces the file list of Out of Scope by machine.
 
 ### REQ-ORB-006.7 — Purity, citations and test hygiene
 
@@ -223,21 +221,25 @@ All commands in this section run from a POSIX shell: Git Bash on Windows, or any
 | V8 | `dart format --set-exit-if-changed .` | exit 0 | Constitution principle 8 |
 | V9 | `grep -ohE "// REQ-ORB-006\.[0-9]+" packages/orbital_core/test/earth_fixed_test.dart \| sort -u \| paste -sd, -` | standard output `// REQ-ORB-006.1,// REQ-ORB-006.2,// REQ-ORB-006.3,// REQ-ORB-006.4,// REQ-ORB-006.5` | REQ-ORB-006.7 (tags of the math test file) |
 | V10 | `grep -ohE "// REQ-ORB-006\.[0-9]+" test/orbital_core_earth_fixed_guard_test.dart \| sort -u \| paste -sd, -` | standard output `// REQ-ORB-006.6,// REQ-ORB-006.7` | REQ-ORB-006.7 (tags of the guard test file) |
-| V11 | `git fetch origin main && git diff --exit-code origin/main...HEAD -- packages/orbital_core/lib/src/orbital_elements.dart packages/orbital_core/lib/src/tle_parser.dart packages/orbital_core/lib/src/julian_date.dart packages/orbital_core/lib/src/gmst.dart packages/orbital_core/lib/src/elapsed_time.dart packages/orbital_core/lib/src/kepler.dart packages/orbital_core/lib/src/perifocal.dart packages/orbital_core/lib/src/state_vector.dart` | exit 0 | REQ-ORB-006.6 (earlier library files unchanged) |
+| V11 | `git fetch origin main && git diff --name-only origin/main...HEAD \| sort \| paste -sd, -` | standard output `packages/orbital_core/lib/orbital_core.dart,packages/orbital_core/lib/src/earth_fixed.dart,packages/orbital_core/test/earth_fixed_test.dart,test/orbital_core_earth_fixed_guard_test.dart` | REQ-ORB-006.6 (only the four files of this spec change) |
 
 Inside the table, `\|` is a single pipe. The CI workflow of req-inf-002 runs V2, V3 and V6–V8 on every pull request.
 
 ### Local negative checks (guard test only)
 
-These run after both test files are committed on the feature branch. For each row:
-
-1. Apply the edit.
-2. Run the command below and confirm that it prints at least one line. That line carries both the expected tag and the spec path.
-3. Revert with `git checkout -- packages/orbital_core test specs` before the next row.
+These run after every file of this pull request is committed on the feature branch, so that the revert below restores each of them. Before G0, `git status --porcelain` must print nothing; otherwise stop, because G11, G12, G36 and the revert would destroy uncommitted work.
 
 The command is:
 
     flutter test test/orbital_core_earth_fixed_guard_test.dart 2>&1 | grep -F "<tag>" | grep -F "specs/req-orb-006.md"
+
+**Control run (G0).** With no edit applied, run the command once with `<tag>` replaced by `[REQ-ORB-006.6]` and once with `[REQ-ORB-006.7]`, and confirm that each prints nothing. A line printed here means that the output of a passing run, such as a test name, already carries a tag and the spec path, so the rows below would prove nothing; fix the guard test file before continuing.
+
+Then, for each row of the table:
+
+1. Apply the edit.
+2. Run the command and confirm that it prints at least one line. That line carries both the expected tag and the spec path.
+3. Revert with `git checkout -- packages/orbital_core test specs` before the next row.
 
 "Delete the line X" and "Replace the line X" act on every line that equals X after trimming. "Replace every occurrence" acts on every occurrence of the substring. Inside the table, `\|` is a single pipe.
 
@@ -275,12 +277,15 @@ The command is:
 | G30 | Append the line `// Platform.script` to the guard test file | `[REQ-ORB-006.7]` |
 | G31 | Replace the line `// REQ-ORB-006.6` with `// REQ-ORB-006.x`, keeping its indentation, in the guard test file; any other text containing it, such as a string literal, is left unchanged | `[REQ-ORB-006.7]` |
 | G32 | Delete the file `packages/orbital_core/test/earth_fixed_test.dart` | `[REQ-ORB-006.7]` |
+| G33 | Append the line `double _earthRateRadS = 7.292115e-5;` to the Earth-fixed library file | `[REQ-ORB-006.6]` |
+| G34 | Delete the line `/// Units: km and radians.` from the Earth-fixed library file and insert it as the first line of the same file | `[REQ-ORB-006.6]` |
+| G35 | Run `sed -i 's/$/\r/' packages/orbital_core/lib/src/earth_fixed.dart` (CRLF in a core library file) | `[REQ-ORB-006.7]` |
+| G36 | Delete the file `packages/orbital_core/lib/orbital_core.dart` | `[REQ-ORB-006.6]` |
+| G37 | Run `printf '\xEF\xBB\xBF' \| cat - specs/req-orb-006.md > /tmp/g37 && mv /tmp/g37 specs/req-orb-006.md` (BOM in the spec file) | `[REQ-ORB-006.7]` |
 
 No G row removes `import 'support/repo_root.dart';` from the guard test file. That edit stops the file from compiling, so V4 fails without printing any tag; the import line check is kept as a second line of defence.
 
-**Pull request checklist.** The description of the pull request that closes this spec lists V1–V11 and G1–G32, each with its observed result, and the review item below. A pull request without this list is incomplete regardless of its check status.
-
-- **R1:** the reviewer confirms REQ-ORB-006.6 (review acceptance): the Earth-fixed library file declares no public top-level name other than `ecefPositionKm`.
+**Pull request checklist.** The description of the pull request that closes this spec lists V1–V11 and G0–G37, each with its observed result. A pull request without this list is incomplete regardless of its check status.
 
 ## Edge Cases & Errors
 
@@ -295,7 +300,7 @@ No G row removes `import 'support/repo_root.dart';` from the guard test file. Th
 - **Earth-relative velocity.** Not produced (Context, Position only). Rotating a velocity with this function gives a vector that is not the Earth-relative velocity, because it lacks the term ω⊕ × r; no consumer may do so. req-orb-009 carries only the Earth-fixed position.
 - **Frame of the Kepler propagator.** The inertial frame of the elements is TEME for elements read from a TLE, so the same rotation serves both propagators (req-orb-005, Context). No separate rotation is needed for the Kepler output.
 - **UTC as UT1.** GMST is computed from UTC (req-orb-001). A DUT1 of up to 0.9 s turns the Earth by at most 6.6·10⁻⁵ rad, which moves a geostationary position by at most 2.8 km. This is inherited, not new, and the published rows of this spec use the published UT1 date as UTC, so they do not include it.
-- **Declarations split by the formatter.** The public declaration does not fit within 80 columns, so `dart format` splits its parameters one per line, which the guard fixes. If a future formatter changes that layout, the guard reports `[REQ-ORB-006.6]`. The fix is a spec change, never a relaxed guard.
+- **Declarations split by the formatter.** The public declaration does not fit within 80 columns, so `dart format` splits its parameters one per line, which the guard fixes. The single top-level declaration rule of REQ-ORB-006.6 relies on the same formatter, which writes every top-level declaration at the first column and closes this declaration with `}) {`. If a future formatter changes that layout, the guard reports `[REQ-ORB-006.6]`. The fix is a spec change, never a relaxed guard.
 - **CRLF or BOM in the new files or the spec file.** Rejected by the guard test file (REQ-ORB-006.7). `.gitattributes` (`* text=auto eol=lf`) keeps checkouts LF, so a CR byte means an editor saved the file with Windows line endings. The fix is to rewrite the file as UTF-8 without BOM and with LF, never to relax the test.
 - **Missing guard test file.** The guard cannot report its own absence. V4 names the file explicitly, so `flutter test` exits with a non-zero code when it is missing, and V10 prints nothing.
 - **Repository root not found.** The guard test file uses `findRepoRoot` from `test/support/repo_root.dart`, which fails with `Cannot resolve the repository root`. It never skips.
@@ -306,7 +311,7 @@ No G row removes `import 'support/repo_root.dart';` from the guard test file. Th
 
 Nothing below is written in this pull request:
 
-- An Earth-relative velocity or acceleration, the Earth's rotation rate and its excess length of day, and any new constant.
+- An Earth-relative velocity or acceleration, the Earth's rotation rate and its excess length of day, and any new constant. A new constant means a top-level declaration (REQ-ORB-006.6); local variables inside the function, `const` ones included, are allowed.
 - Polar motion, the kinematic terms of GMST, nutation, Greenwich Apparent Sidereal Time, or any Earth orientation data from the IERS.
 - The inverse rotation from Earth-fixed to inertial axes, and any conversion to or from GCRF, J2000, TOD, MOD, CIRS, TIRS or ITRF.
 - A function that takes an element set, an instant or a Julian date, the propagator interface, or a propagated state (req-orb-009).
