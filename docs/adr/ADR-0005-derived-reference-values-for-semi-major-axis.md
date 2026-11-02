@@ -1,6 +1,6 @@
 # ADR-0005 — Derived reference values for the semi-major axis from mean motion
 
-- **Status:** Proposed (2026-11-01), pending acceptance by the developer before `specs/req-orb-005.md` is implemented
+- **Status:** Accepted (2026-11-01, by the developer, before `specs/req-orb-005.md` was implemented)
 - **Date:** 2026-11-01
 - **Relates to:** Constitution principle 6 (math is proven, not trusted); `specs/req-orb-005.md`, REQ-ORB-005.1; roadmap row 7 (req-orb-005); ADR-0004 (the same kind of exception for two other formulas)
 
@@ -25,7 +25,7 @@ The formula is Kepler's third law solved for a. It has one constant, μ, which t
    - start from the mean motion published in a cited source: the element sets 00005 and 28129 of Vallado's `SGP4-VER.TLE` (AIAA 2006-6753), as already cited by req-orb-003 and req-orb-004;
    - be derived in the spec through a different path from the implementation's: the orbital period T = 86400 / n in seconds, from n in revolutions per day, and a = (μ · T² / (4π²))^(1/3), written out in full in the row, while the implementation takes n in radians per second;
    - be marked "Derived" in the spec.
-3. **Constant.** The math test file writes μ as the literal 398600.4418 for the derivation and never reads it from the implementation, so a wrong constant in the implementation fails the rows.
+3. **Constant.** The expected values of the derived rows are written in the spec and in the math test file as literal numbers, computed with μ = 398600.4418. The math test file never uses the constant of the implementation to compute an expected value, so a wrong constant in the implementation fails the rows.
 4. **No anchor row.** No published value of this formula exists, so no row can be anchored to a published output. The published state vector of REQ-ORB-005.2 does not take a mean motion as input and cannot serve as an anchor. This weakness is accepted and recorded here.
 
 ## Consequences

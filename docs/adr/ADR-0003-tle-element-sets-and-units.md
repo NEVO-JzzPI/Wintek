@@ -1,8 +1,8 @@
 # ADR-0003 — TLE element sets and their units
 
-- **Status:** Accepted (2026-10-28, by the developer, after the implementation had landed in commit aab0c6b; see the Delivery record of `specs/req-orb-003.md`)
-- **Date:** 2026-10-26
-- **Relates to:** Constitution principles 1 (one stack, no new data sources), 6 (math is proven), 12 (English and explicit units); `specs/req-orb-003.md`; roadmap rows 5 (req-orb-003), 12 (req-orb-010) and 14 (req-dat-002)
+- **Status:** Accepted (2026-10-28, by the developer, after the implementation had landed in commit aab0c6b; see the Delivery record of `specs/req-orb-003.md`) for decisions 1 to 3. Amendment 1 (decisions 4 to 6): Accepted (2026-11-01, by the developer, before `specs/req-orb-005.md` was implemented).
+- **Date:** 2026-10-26; Amendment 1 on 2026-11-01
+- **Relates to:** Constitution principles 1 (one stack, no new data sources), 6 (math is proven), 12 (English and explicit units); `specs/req-orb-003.md`; `specs/req-orb-005.md` (Amendment 1); roadmap rows 5 (req-orb-003), 7 (req-orb-005), 12 (req-orb-010) and 14 (req-dat-002)
 
 ## Context
 
@@ -24,10 +24,28 @@ Every other value of the element set follows principle 12 without exception: ang
 ## Consequences
 
 - req-dat-002 downloads CelesTrak GP data in TLE format and removes the name line before handing the two element lines to the parser.
-- req-orb-010 owns the Earth radius and any other gravity-model constant; the element model carries none.
+- req-orb-010 owns the Earth radius and any other gravity-model constant of SGP4; the element model carries none. Amendment 1 places the gravitational parameter of the in-house Kepler propagator in req-orb-005.
 - Catalog numbers above 99999 (Alpha-5) are not supported. Supporting them, or moving to OMM, requires a new ADR that supersedes decision 1.
 - Any further unit exception requires its own ADR; this one does not generalize.
 - `specs/req-orb-002.md` mentions a possible ADR-0003 for the GMST model. That number is now taken; a GMST ADR, if one is ever written, takes the next free number.
+
+## Amendment 1 — Gravitational parameter of the Kepler propagator
+
+### Context
+
+The first QA audit of `specs/req-orb-005.md` (finding 2.1) found that the Consequences above, read literally, assign every gravity-model constant to req-orb-010. req-orb-005 needs one such constant before req-orb-010 exists: the gravitational parameter μ of the in-house Kepler propagator, which step 4 of the Project Brief fixes at 398600.4418 km³/s², the WGS-84 value. It is not a constant of SGP4, which uses its own WGS-72 gravity model, and the element model still carries no gravity constant.
+
+### Decision
+
+4. **Scope of the gravity-model rule.** The Consequence "req-orb-010 owns the Earth radius and any other gravity-model constant" covers the gravity model of SGP4 (WGS-72 in Vallado's reference code): its Earth radius, its gravitational parameter, its zonal harmonics and any other constant the SGP4 adapter consumes.
+5. **Kepler propagator constant.** The gravitational parameter of the in-house Kepler propagator, 398600.4418 km³/s² as fixed by the Project Brief, is owned by req-orb-005 under a name that states its model (WGS-84). Later specs that need the same value, such as req-orb-008, reuse that constant instead of declaring their own.
+6. **Model in the name.** Any gravity-model constant added to `packages/orbital_core` states its model in its name, so that the WGS-84 constant of req-orb-005 and the WGS-72 constants of req-orb-010 cannot be confused.
+
+### Consequences
+
+- req-orb-005 can declare its constant without contradicting this ADR, once Amendment 1 is accepted.
+- The core will hold two gravitational parameters once req-orb-010 lands, one per model, each named after its model.
+- The element model is unchanged: it still carries no gravity constant.
 
 ## Out of scope
 
