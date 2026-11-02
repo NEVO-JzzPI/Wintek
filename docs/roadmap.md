@@ -11,7 +11,7 @@ Strict build order: every row is one future `specs/<id>.md` and one pull request
 [X]| req-orb-003 | Orbital elements model and TLE parser | Define the immutable element set in radians and seconds with checksum validation, the single input type of every propagator. |
 [X]| req-orb-004 | Kepler equation solver | Advance mean anomaly to time t and solve `M = E - e·sin E` by Newton-Raphson, the heart of the in-house propagator. |
 [X]| req-orb-005 | Perifocal to inertial state vector | Derive `a` from `n`, place the object in its orbital plane and rotate it by R₃(−Ω)·R₁(−i)·R₃(−ω) to obtain an inertial position and velocity. |
-| req-orb-006 | Inertial to ECEF rotation | Apply GMST to the inertial vector, unblocking every ground-referenced coordinate. |
+[X]| req-orb-006 | Inertial to ECEF rotation | Apply GMST to the inertial vector, unblocking every ground-referenced coordinate. |
 | req-orb-007 | ECEF to WGS-84 geodetic | Convert the Earth-fixed vector to latitude, longitude and altitude, the numbers the globe and the card display. |
 | req-orb-008 | Derived orbital values | Compute altitude, speed by vis-viva, period and inclination, completing the data the object card needs. |
 | req-orb-009 | Propagator interface and Kepler implementation | Freeze the one seam every propagator implements, returning a state that already carries M, E, GMST and ECEF so math mode later needs no refactor. |
