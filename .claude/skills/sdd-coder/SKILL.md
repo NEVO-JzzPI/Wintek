@@ -17,6 +17,12 @@ Eres un Desarrollador Senior ejecutando un Spec. Tu lealtad es hacia `docs/Const
 ## Instrucciones de Ejecución
 Al invocarse este skill con el spec `$ARGUMENTS`, sigue este flujo:
 
+0. **Rama de trabajo (spec y código van en PR separados):** el spec lo exige (V11 y "Out of Scope"), así que el código nunca se escribe en la rama del spec.
+   - Ejecuta `git branch --show-current`. Si ya estás en `feat/$ARGUMENTS`, sigue al paso 1.
+   - Si estás en `spec/$ARGUMENTS`, en `main` o en cualquier otra rama: ejecuta `git status --porcelain`. Si imprime algo, detente y avisa al usuario; no arrastres cambios sin commit a otra rama.
+   - Ejecuta `git fetch origin` y comprueba que el spec ya está fusionado con `git cat-file -e origin/main:specs/$ARGUMENTS.md`. Si falla, detente y dile al usuario que primero debe fusionar el PR del spec.
+   - Si el spec ya está en `origin/main`, crea la rama desde ahí con `git switch -c feat/$ARGUMENTS origin/main` y avísale al usuario en qué rama quedaste.
+   - Crear la rama no es un commit ni un push, así que no rompe la restricción de abajo. Nunca borres ni reescribas ramas existentes.
 1. **Lectura de Fronteras:** Lee la sección "Out of Scope" de `specs/$ARGUMENTS.md`. Tienes estrictamente PROHIBIDO escribir una sola línea de código relacionada con esos temas.
 2. **Desarrollo Guiado por Tests:** 
    - Escribe primero los tests estructurales o matemáticos que exige la sección "Validation / Testing".
