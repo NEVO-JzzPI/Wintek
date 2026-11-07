@@ -1,8 +1,8 @@
 # ADR-0003 — TLE element sets and their units
 
-- **Status:** Accepted (2026-10-28, by the developer, after the implementation had landed in commit aab0c6b; see the Delivery record of `specs/req-orb-003.md`) for decisions 1 to 3. Amendment 1 (decisions 4 to 6): Accepted (2026-11-01, by the developer, before `specs/req-orb-005.md` was implemented).
-- **Date:** 2026-10-26; Amendment 1 on 2026-11-01
-- **Relates to:** Constitution principles 1 (one stack, no new data sources), 6 (math is proven), 12 (English and explicit units); `specs/req-orb-003.md`; `specs/req-orb-005.md` (Amendment 1); roadmap rows 5 (req-orb-003), 7 (req-orb-005), 12 (req-orb-010) and 14 (req-dat-002)
+- **Status:** Accepted (2026-10-28, by the developer, after the implementation had landed in commit aab0c6b; see the Delivery record of `specs/req-orb-003.md`) for decisions 1 to 3. Amendment 1 (decisions 4 to 6): Accepted (2026-11-01, by the developer, before `specs/req-orb-005.md` was implemented). Amendment 2 (decisions 7 to 9): Accepted (2026-11-07, by the developer, before `specs/req-orb-007.md` was implemented).
+- **Date:** 2026-10-26; Amendment 1 on 2026-11-01; Amendment 2 on 2026-11-07
+- **Relates to:** Constitution principles 1 (one stack, no new data sources), 6 (math is proven), 12 (English and explicit units); `specs/req-orb-003.md`; `specs/req-orb-005.md` (Amendment 1); `specs/req-orb-007.md` (Amendment 2); roadmap rows 5 (req-orb-003), 7 (req-orb-005), 9 (req-orb-007), 12 (req-orb-010) and 14 (req-dat-002)
 
 ## Context
 
@@ -46,6 +46,24 @@ The first QA audit of `specs/req-orb-005.md` (finding 2.1) found that the Conseq
 - req-orb-005 can declare its constant without contradicting this ADR, once Amendment 1 is accepted.
 - The core will hold two gravitational parameters once req-orb-010 lands, one per model, each named after its model.
 - The element model is unchanged: it still carries no gravity constant.
+
+## Amendment 2 — Constants of the WGS-84 ellipsoid
+
+### Context
+
+The first QA audit of `specs/req-orb-007.md` (finding 2.1) found that no decision of this ADR covers the constants of an ellipsoid. req-orb-007 converts the Earth-fixed position to geodetic coordinates on the WGS-84 ellipsoid, as step 8 of the Project Brief fixes, and needs its semi-major axis, 6378.137 km, and its inverse flattening, 298.257223563. Decisions 4 to 6 speak only of gravity-model constants, and the Consequence "req-orb-010 owns the Earth radius", read without decision 4, could be taken to claim this radius for the SGP4 adapter. The globe specs (roadmap rows 21 to 25, req-viz-001 to req-viz-005) will need the same radius, so the owner and the reuse rule have to be fixed before req-orb-007 is implemented.
+
+### Decision
+
+7. **Owner.** The semi-major axis and the inverse flattening of the WGS-84 ellipsoid are owned by req-orb-007, as public constants of `packages/orbital_core`. They describe the shape used for geodetic coordinates. They are not constants of the SGP4 gravity model, so decision 4 does not assign them to req-orb-010. The Earth radius of that model (WGS-72, 6378.135 km in Vallado's reference code) stays with req-orb-010.
+8. **Reuse.** A later spec that needs the WGS-84 Earth radius or the shape of the WGS-84 ellipsoid reuses these constants instead of declaring its own. This does not apply to the WGS-72 radius of SGP4 (decision 7). Values derived from them, such as the semi-minor axis, the flattening or the eccentricity, are computed where they are needed, until a spec proves that a public derived constant is needed.
+9. **Model in the name.** Decision 6 applies to these constants as well: each states its model in its name, so that the WGS-84 radius and the WGS-72 radius of req-orb-010 cannot be confused.
+
+### Consequences
+
+- req-orb-007 can declare its two constants without contradicting this ADR.
+- The core will hold two Earth radii once req-orb-010 lands, one per model, each named after its model.
+- A globe spec that draws the Earth at a scale picks the WGS-84 radius by name; using a sphere of that radius instead of the ellipsoid is that spec's decision, not this one.
 
 ## Out of scope
 
