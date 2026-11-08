@@ -13,8 +13,8 @@ Strict build order: every row is one future `specs/<id>.md` and one pull request
 [X]| req-orb-005 | Perifocal to inertial state vector | Derive `a` from `n`, place the object in its orbital plane and rotate it by R₃(−Ω)·R₁(−i)·R₃(−ω) to obtain an inertial position and velocity. |
 [X]| req-orb-006 | Inertial to ECEF rotation | Apply GMST to the inertial vector, unblocking every ground-referenced coordinate. |
 [X]| req-orb-007 | ECEF to WGS-84 geodetic | Convert the Earth-fixed vector to latitude, longitude and altitude, the numbers the globe and the card display. |
-| req-orb-008 | Derived orbital values | Compute speed by vis-viva, period and inclination, completing the data the object card needs; the altitude comes from req-orb-007 and is not computed again. |
-| req-orb-009 | Propagator interface and Kepler implementation | Freeze the one seam every propagator implements, returning a state that already carries M, E, GMST and ECEF so math mode later needs no refactor. |
+[X]| req-orb-008 | Derived orbital values | Compute speed by vis-viva, period and inclination, completing the data the object card needs; the altitude comes from req-orb-007 and is not computed again. |
+| req-orb-009 | Propagator interface and Kepler implementation | Freeze the one seam every propagator implements, returning a state that already carries M, E, GMST, ECEF and the inertial position and velocity, so math mode and the derived values of req-orb-008 later need no refactor. |
 | req-orb-010 | SGP4 adapter behind the interface | Wrap the library chosen in ADR-0002 and validate it against the official test vectors, delivering the realistic propagation the MVP renders. |
 | req-dat-001 | Satellite catalog | Fix the four tracked objects and their NORAD IDs as domain constants, closing the open GOES-East question before any request is written. |
 | req-dat-002 | CelesTrak GP client | Fetch OMM/TLE data with one request per dataset and typed failures, the app's only network boundary. |
