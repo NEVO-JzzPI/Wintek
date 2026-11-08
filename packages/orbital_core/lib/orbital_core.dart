@@ -1,3 +1,4 @@
+export 'src/derived_values.dart';
 export 'src/earth_fixed.dart';
 export 'src/elapsed_time.dart';
 export 'src/geodetic.dart';
