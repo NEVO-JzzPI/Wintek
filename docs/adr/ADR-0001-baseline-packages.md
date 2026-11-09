@@ -1,6 +1,6 @@
 # ADR-0001 — Baseline packages
 
-- **Status:** Accepted
+- **Status:** Accepted. Superseded in part by ADR-0002 (2026-11-08): `packages/orbital_core` declares one runtime dependency; see the note under the `packages/orbital_core` table.
 - **Date:** 2026-10-20
 - **Relates to:** Constitution principles 1 (one stack), 3 (pure-Dart core), 5 (dependencies point inward)
 
@@ -36,6 +36,8 @@ The following packages are approved. Nothing else enters `pubspec.yaml` — app 
 | *(none)* | runtime | The math core must stay pure Dart with no I/O; dart:math and dart:core are enough. |
 | `lints` | dev | Pure-Dart equivalent of `flutter_lints`; the package must not depend on Flutter. |
 | `test` | dev | Runs `dart test` standalone, as principle 3 requires. |
+
+> **Note (2026-11-08, ADR-0002):** ADR-0002 adds one runtime dependency to `packages/orbital_core`: `satellite_observer` at exactly `1.0.1`, with `meta` as its transitive dependency, and it makes an exception to the caret rule below for that one package. The "(none)" row above and the "zero runtime dependencies" of the Context describe the core before req-orb-010. The development dependencies of this table are unchanged.
 
 Versions are the latest stable at setup time, recorded as caret ranges in `pubspec.yaml` and locked by `pubspec.lock`. Upgrading within a range is not an ADR; changing the list is.
 

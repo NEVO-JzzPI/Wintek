@@ -36,6 +36,7 @@ Its weaknesses are recorded: one maintainer, no stars and a first release in 202
 5. **Surface used.** The adapter uses only the propagation layer of the library: its element set built from fields, its SGP4 engine with the WGS-72 gravity model, its TEME state and its two exception types for invalid elements and propagation errors. Look angles, passes, visibility, geodesy and the GMST of the library are not used. GMST and the Earth-fixed position stay those of req-orb-002 and req-orb-006, as req-orb-009 fixes for every propagator.
 6. **Gravity-model constants (ADR-0003, decisions 4 and 6).** The WGS-72 constants of SGP4 are those of the library, selected by name. The core declares no gravity-model constant for SGP4, so decision 6 (the model in the name) is met by the name of the selected model, and req-orb-010 owns that selection.
 7. **Amended specs.** REQ-INF-001.3 and REQ-INF-001.8 of `specs/req-inf-001.md`, and REQ-INF-002.9 of `specs/req-inf-002.md`, are amended with this ADR so that the core may declare this one runtime dependency and no other.
+8. **Notes in earlier ADRs.** ADR-0001 notes, under its `packages/orbital_core` table, the runtime dependency and the version exception of decisions 2 to 4. ADR-0003 notes, under the Consequences of its Amendments 1 and 2, that the core holds one gravitational parameter and one Earth radius, both WGS-84, because of decision 6. Their decisions are unchanged.
 
 ## Consequences
 

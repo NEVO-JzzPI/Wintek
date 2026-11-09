@@ -1,6 +1,6 @@
 # req-orb-010 — SGP4 adapter behind the interface
 
-- **Status:** Draft (revision 1), pending the first QA audit. On 2026-11-08, before drafting, the developer approved:
+- **Status:** Draft (revision 2), after the first QA audit (findings 1.1 to 1.4, 2.1, 2.2, 3.1, 4.1 to 4.3, 5.1 and 5.2), pending a second audit. On the same day the developer approved the revision 2 changes, including the notes added to ADR-0001 and ADR-0003. On 2026-11-08, before drafting, the developer approved:
   - the library: `satellite_observer`, accepted by ADR-0002 on condition that it passes the official vectors;
   - ADR-0002 drafted with this spec, in the same pull request;
   - an element set built from the fields of `OrbitalElements`, with no change to req-orb-003;
@@ -25,7 +25,7 @@
   - req-orb-009: `Propagator`, `PropagatedState` and `PropagationException`;
   - req-inf-001 and req-inf-002, as amended with this spec;
   - ADR-0001 (baseline packages), ADR-0002 (SGP4 library) and ADR-0003 (TLE element sets and the gravity-model constants of SGP4).
-- **ADR:** ADR-0002, drafted and accepted with this spec. It chooses the library, pins its version, accepts its transitive dependency and amends REQ-INF-001.3, REQ-INF-001.8 and REQ-INF-002.9.
+- **ADR:** ADR-0002, drafted and accepted with this spec. It chooses the library, pins its version, accepts its transitive dependency and amends REQ-INF-001.3, REQ-INF-001.8 and REQ-INF-002.9. ADR-0001 and ADR-0003 carry a note, added with revision 2, that points at ADR-0002 where it supersedes a statement of theirs; their decisions are unchanged.
 
   This spec adds no formula of its own beyond unit conversions: degrees to and from radians, and revolutions per day to and from radians per second. REQ-ORB-010.1 tests those conversions end to end against the published vectors of Vallado et al., as Constitution principle 6 requires.
 
@@ -43,7 +43,7 @@ The developer approved these decisions before drafting.
   - the two mean-motion terms, converted back to the published units.
 
   req-orb-003 is not changed. In the prototype, this path differed from the library's own TLE path by at most 2.6·10⁻⁷ km. That difference comes from the round trips of the unit conversions and stays inside the tolerance of REQ-ORB-010.1.
-- **Official vectors, 30 sets.** `SGP4-VER.TLE` holds 33 element sets. Three of them, catalog numbers 33333, 33334 and 33335, carry an invalid line 1 checksum on purpose, and the parser of req-orb-003 rejects them. The adapter is proved against the other 30 sets and their 588 reference states in `tcppver.out` (REQ-ORB-010.1). Five of them stop early with SGP4 error codes 1, 1, 6, 6 and 6 (REQ-ORB-010.2). The three rejected sets are kept as a test of the parser boundary (REQ-ORB-010.3). They carry the two cases of error codes 4 and 3, which this adapter therefore cannot reach.
+- **Official vectors, 30 sets.** `SGP4-VER.TLE` holds 33 element sets. Three of them, catalog numbers 33333, 33334 and 33335, carry an invalid line 1 checksum on purpose, and the parser of req-orb-003 rejects them. The adapter is proved against the other 30 sets and their 588 reference states in `tcppver.out` (REQ-ORB-010.1). Five of them stop early with SGP4 error codes 1, 1, 6, 6 and 6 (REQ-ORB-010.2). The three rejected sets are kept as a test of the parser boundary (REQ-ORB-010.3). They carry the two cases of error codes 4 and 3, which this adapter therefore cannot reach. In this spec, "the official test vectors" of roadmap row 12 therefore means these 30 sets and their 588 states, not all 33 entries.
 - **Verification data.** Constitution principle 3 and the hygiene rules of req-orb-006 to req-orb-009 keep `dart:io` out of the core and its math tests. The two original files are therefore vendored unchanged, except that the line endings of `SGP4-VER.TLE` are converted to LF. A Dart data file then carries their content as string literals, for the math test file to read. The guard test file, in the application suite, proves line by line that the data file equals the originals (REQ-ORB-010.6).
 - **Amended scaffold specs.** REQ-INF-001.3 and REQ-INF-001.8 required zero runtime dependencies in the core, and REQ-INF-002.9 fixed the name of the test that enforces it. They are amended with this spec (ADR-0002, decision 7) so that the core may declare this one dependency, at exactly this version, and no other.
 
@@ -56,7 +56,7 @@ The remaining decisions follow from the Constitution, req-orb-009 and the protot
   - An element set that the library rejects is reported by `stateAt`, never by the constructor, so building a propagator for parsed elements never throws. Every call of `stateAt` for that set throws the `PropagationException` with message I, after the instant check. The case is an inclination of exactly 180°: the parser accepts it, but the library rejects any inclination from π.
 
   The members of `PropagationException` stay those of req-orb-009 (Context, Exception, not error).
-- **Gravity model (ADR-0003, decisions 4 and 6; ADR-0002, decision 6).** The adapter selects the library's WGS-72 model by name and declares no gravity-model constant. The operation mode is improved (`'i'`), fixed by the library. The official vectors confirm both choices: each is the mode they were generated with.
+- **Gravity model (ADR-0003, decisions 4 and 6; ADR-0002, decision 6).** The adapter selects the library's WGS-72 model by name and declares no gravity-model constant. The operation mode is improved (`'i'`), fixed by the library. The official vectors are reproduced with both, within the tolerances of REQ-ORB-010.1; no source cited here states the mode in which `tcppver.out` was generated.
 - **No state between calls.** The adapter holds its element set and the library's initialized engine, which is a function of the element set alone (req-orb-009, Context, No state between calls). The prototype asked the 588 instants forward and then backward on the same adapter: every number was equal.
 - **Units.** Kilometres, kilometres per second, seconds and radians at the seam (Constitution principle 12). Degrees and revolutions per day exist only at the call into the library.
 - **Cost.** The prototype measured 0.88 µs per state for NOAA 14 and 0.96 µs per state for a geostationary set, and 7.9 µs to build an adapter, on the development machine. That is far below the frame budget of Constitution principle 13. The figure is recorded, not tested; profiling belongs to req-sta-001.
@@ -85,7 +85,8 @@ These definitions are normative.
   - **Fixture output file.** `sgp4/tcppver.out` of python-sgp4 (Brandon Rhodes, MIT; `https://github.com/brandon-rhodes/python-sgp4`) at commit `0f06a9147333e5a82197b5c04f5e87b477deca9e`, the last commit that changed it. That file mirrors the C++ reference output of Vallado et al. and is copied unchanged: SHA-256 `687bf28dbe52df86e8e60ab5cb4a08d1aa3dbcaf4e63b1f7ab95f044fbe3833b`, 140162 bytes, LF line endings. The AIAA archive no longer contains `tcppver.out`.
 - **Entry:** a line of the fixture TLE file that starts with `1 `, together with the next line, which starts with `2 `. The fixture TLE file holds 33 entries; catalog number 20413 appears in two of them.
 - **Block:** a line of the fixture output file that contains ` xx`, together with the lines after it, up to the next such line, that have at least seven whitespace-separated fields. Block k belongs to entry k.
-- **Accepted sets:** the entries whose catalog number, columns 3 to 7 of line 1, is not 33333, 33334 or 33335. There are 30 of them. Position p is the p-th accepted set in file order. The table gives the catalog number and the number of rows of each position:
+- **Catalog number:** columns 3 to 7 of line 1 of an entry, parsed as an integer, so leading zeros are dropped (`00005` is 5). Catalog numbers are always compared as integers.
+- **Accepted sets:** the entries whose catalog number is not 33333, 33334 or 33335. There are 30 of them. Position p is the p-th accepted set in file order. The table gives the catalog number and the number of rows of each position:
 
   | p | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
   | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -252,7 +253,7 @@ The core declares exactly the one dependency of ADR-0002, at exactly its version
 **Acceptance (verified by the guard test file):**
 
 - **Pin.**
-  - Under `dependencies:`, the core manifest contains the line `  satellite_observer: 1.0.1`, compared with no spaces removed.
+  - The dependencies section of the core manifest contains the line `  satellite_observer: 1.0.1`, compared with no spaces removed. The section is the lines after the line `dependencies:`, up to the next line that has a character other than a space at its first column, as the dependency guard of req-inf-001 reads it.
   - The application lockfile contains a package entry `satellite_observer:` whose block holds the line `sha256: "39c57843b8d92c6c9e63f362afb135973bd00956471ba50428801217661dca83"` and the line `version: "1.0.1"`, after trimming. The block is the lines after `  satellite_observer:`, up to the next line that starts with exactly two spaces followed by a character other than a space.
 - **Purity.** No line of any core library file, with leading spaces removed, matches the regular expression `^(import|export)\s+['"](dart:io|dart:ffi|package:flutter[^'"]*)['"]`.
 - **Math test imports.** The math test file:
@@ -310,20 +311,24 @@ Inside the table, `\|` is a single pipe. The CI workflow of req-inf-002 runs V2,
 
 **Precondition of V11.** The implementation branch is created from `main` after the pull request of this spec was merged into `main` with a merge commit. That pull request carries the spec file, ADR-0002, the amendments of `specs/req-inf-001.md` and `specs/req-inf-002.md`, and the roadmap row. If the branch was created before that merge, or the spec pull request was squashed, those files appear in the diff. V11 then counts as not run, never as a pass or a failure, and the fix is to rebase the implementation branch onto `main`.
 
+**Precondition of the fixtures.** The CelesTrak copy of `SGP4-VER.TLE` has CRLF line endings, and `.gitattributes` normalizes only what enters the repository, so a copy saved on Windows keeps its CR bytes in the working tree until the next checkout. Convert it to LF before the first commit (for example `tr -d '\r' < SGP4-VER.TLE > packages/orbital_core/test/fixtures/vallado/SGP4-VER.TLE`), and confirm with V12 that both fixtures have the hashes of Definitions before running the guard.
+
 ### Local negative checks
 
 These run after every file of the implementation pull request is committed on the feature branch, so that the revert below restores each of them. Before G0, `git status --porcelain` must print nothing; otherwise stop, because the deletions and the revert would destroy uncommitted work.
 
 The command of the G rows is:
 
-    flutter test test/orbital_core_sgp4_guard_test.dart 2>&1 | grep -F "<tag>" | grep -F "specs/req-orb-010.md"
+    flutter test --no-pub test/orbital_core_sgp4_guard_test.dart 2>&1 | grep -F "<tag>" | grep -F "specs/req-orb-010.md"
+
+Every G and D row runs `flutter test` with `--no-pub`. Without it, `flutter test` resolves the dependencies again before it runs. It would recreate a deleted `pubspec.lock` (G64), would need the network after any edit of the core manifest (G40, G75, D1–D3), and would rewrite the application lockfile. With `--no-pub` the rows only read text, and the tests run against the package configuration resolved before G0.
 
 **Control run (G0).** With no edit applied, run the command once with `<tag>` replaced by each of `[REQ-ORB-010.6]`, `[REQ-ORB-010.7]`, `[REQ-ORB-010.8]` and `[REQ-ORB-010.9]`, and confirm that each prints nothing. A line printed here means that the output of a passing run, such as a test name, already carries a tag and the spec path, so the rows below would prove nothing; fix the guard test file before continuing.
 
 Then, for each G row and each D row:
 
 1. Apply the edit.
-2. For a G row, run the command and confirm that it prints at least one line. For a D row, run `flutter test test/dependency_guard_test.dart` and confirm that it exits with a code other than 0.
+2. For a G row, run the command and confirm that it prints at least one line. For a D row, run `flutter test --no-pub test/dependency_guard_test.dart 2>&1 | grep -F "Constitution principle 3"` and confirm that it prints at least one line, so that the row proves a failure of the dependency guard and not of the tool.
 3. Revert with `git checkout -- packages/orbital_core test specs pubspec.lock` before the next row.
 
 The edits are defined as follows.
@@ -405,6 +410,16 @@ Inside the table, `\|` is a single pipe. "The adapter file", "the public file", 
 | G63 | Delete the file `specs/req-orb-010.md` | `[REQ-ORB-010.9]` |
 | G64 | Delete the file `pubspec.lock` | `[REQ-ORB-010.9]` |
 | G65 | Run `rm -rf packages/orbital_core/lib` (delete the core library directory) | `[REQ-ORB-010.9]` |
+| G66 | Run `printf '\xEF\xBB\xBF' \| cat - packages/orbital_core/test/fixtures/vallado/SGP4-VER.TLE > /tmp/g66 && mv /tmp/g66 packages/orbital_core/test/fixtures/vallado/SGP4-VER.TLE` (BOM in the TLE fixture) | `[REQ-ORB-010.6]` |
+| G67 | Run `sed -i 's/$/\r/' packages/orbital_core/test/fixtures/vallado/tcppver.out` (CRLF in the output fixture) | `[REQ-ORB-010.6]` |
+| G68 | Add `export 'src/kepler.dart';` as the first line of the adapter file | `[REQ-ORB-010.7]` |
+| G69 | Append the line `  final y = lookAngleAt;` to the adapter file | `[REQ-ORB-010.7]` |
+| G70 | Delete the line `import 'gmst.dart';` from the adapter file | `[REQ-ORB-010.7]` |
+| G71 | Replace every occurrence of `Sgp4Propagator(this.elements)` with `Sgp4Propagator(OrbitalElements e)` on the code lines of the adapter file | `[REQ-ORB-010.8]` |
+| G72 | Run `sed -i 's/$/\r/' packages/orbital_core/test/sgp4_verification_data.dart` (CRLF in the data file) | `[REQ-ORB-010.9]` |
+| G73 | Run `sed -i 's/$/\r/' test/orbital_core_sgp4_guard_test.dart` (CRLF in the guard test file) | `[REQ-ORB-010.9]` |
+| G74 | Delete the file `packages/orbital_core/lib/orbital_core.dart` | `[REQ-ORB-010.9]` |
+| G75 | Delete the file `packages/orbital_core/pubspec.yaml` | `[REQ-ORB-010.9]` |
 
 | # | Edit (dependency guard, step 2 for D rows) |
 | --- | --- |
@@ -414,7 +429,7 @@ Inside the table, `\|` is a single pipe. "The adapter file", "the public file", 
 
 No G row removes `import 'support/repo_root.dart';` from the guard test file. That edit stops the file from compiling, so V4 fails without printing any tag; the import line check is kept as a second line of defence.
 
-**Pull request checklist.** The description of the pull request that implements this spec lists V1–V12, G0–G65 and D1–D3, each with its observed result. A pull request without this list is incomplete regardless of its check status. This checklist is the one manual step of this spec: a reviewer reads it, and no command verifies it.
+**Pull request checklist.** The description of the pull request that implements this spec lists V1–V12, G0–G75 and D1–D3, each with its observed result. A pull request without this list is incomplete regardless of its check status. This checklist is the one manual step of this spec: a reviewer reads it, and no command verifies it.
 
 ## Edge Cases & Errors
 
@@ -432,9 +447,10 @@ No G row removes `import 'support/repo_root.dart';` from the guard test file. Th
   - This spec adds no network access at run time.
   - `dart pub get` and `flutter pub get` now download `satellite_observer`. A failed download, a timeout, a runner out of memory or a failed analysis is handled as req-inf-002 defines and never counts as a pass.
   - V11 needs `git fetch`. If the fetch fails, or the precondition of V11 does not hold, V11 counts as not run.
+  - The G and D rows run `flutter test --no-pub`, so they need no network and never resolve dependencies again. A row whose output shows a resolution or compilation error instead of a guard message counts as not run, never as a pass.
   - If pub.dev withdrew the package, the exact pin and the archive hash of REQ-ORB-010.9 make the failure visible. ADR-0002 (Consequences) names the remedies, each of which needs a new ADR.
 - **Library upgrade.** A new release of the library is never picked up silently, because of the exact pin and the archive hash. Moving to it changes the version in ADR-0002, in the doc line "Model" and in this spec, and the official vectors must pass again.
-- **Large data file.** The verification data file holds 648 string literals. `dart format` keeps each literal on its own line, because every one exceeds the line width or ends a multi-line list, so the data-line rule of REQ-ORB-010.6 holds after formatting.
+- **Large data file.** The verification data file holds 648 string literals. `dart format` splits every list that does not fit on one line into one element per line, and no list of the data file fits on one line, so each literal stays on its own line and the data-line rule of REQ-ORB-010.6 holds after formatting.
 - **Missing guard test file.** The guard cannot report its own absence. V4 names the file explicitly, so `flutter test` exits with a non-zero code when it is missing, and V10 prints nothing.
 - **Repository root not found.** The guard test file uses `findRepoRoot` from `test/support/repo_root.dart`, which fails with `Cannot resolve the repository root`. It never skips.
 - **Shell.** The commands of Mathematical Validation / Testing need a POSIX shell with GNU `sed`. Run in PowerShell, they fail with "command not found"; that is an environment error, never a pass. When the G edits are scripted in Git Bash on Windows, an argument that starts with `/`, such as a `///` or `//` line, is rewritten as a path before the program receives it, so the edit silently does nothing and the row reports a false failure. Disable that conversion (for example with `MSYS_NO_PATHCONV=1`) and confirm with `git diff` that each edit applied before reading its result.

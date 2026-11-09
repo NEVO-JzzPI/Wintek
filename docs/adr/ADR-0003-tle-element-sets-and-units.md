@@ -45,6 +45,7 @@ The first QA audit of `specs/req-orb-005.md` (finding 2.1) found that the Conseq
 
 - req-orb-005 can declare its constant without contradicting this ADR, once Amendment 1 is accepted.
 - The core will hold two gravitational parameters once req-orb-010 lands, one per model, each named after its model.
+  - **Note (2026-11-08, ADR-0002, decision 6):** superseded. The WGS-72 constants of SGP4 are those of the library, selected by name, so the core holds one gravitational parameter, the WGS-84 one of req-orb-005. Decisions 4 to 6 are unchanged.
 - The element model is unchanged: it still carries no gravity constant.
 
 ## Amendment 2 — Constants of the WGS-84 ellipsoid
@@ -63,6 +64,7 @@ The first QA audit of `specs/req-orb-007.md` (finding 2.1) found that no decisio
 
 - req-orb-007 can declare its two constants without contradicting this ADR.
 - The core will hold two Earth radii once req-orb-010 lands, one per model, each named after its model.
+  - **Note (2026-11-08, ADR-0002, decision 6):** superseded. The WGS-72 radius of SGP4 is that of the library, selected by name, so the core holds one Earth radius, the WGS-84 one of req-orb-007. Decisions 7 to 9 are unchanged.
 - A globe spec that draws the Earth at a scale picks the WGS-84 radius by name; using a sphere of that radius instead of the ellipsoid is that spec's decision, not this one.
 
 ## Out of scope
