@@ -174,7 +174,7 @@ The repository-root search currently private to `test/dependency_guard_test.dart
 - When the root cannot be resolved, the failure message contains `Cannot resolve the repository root`. It also contains `Constitution principle 3` when called from the guard and `Constitution principle 8` when called from the contract test.
 - Verified by command, not by the contract test: `flutter test test/dependency_guard_test.dart --reporter expanded` exits with code 0, and its output contains each of these three test names verbatim:
   - `app manifest declares no dependency outside the ADR-0001 baseline`
-  - `orbital_core manifest declares zero runtime deps, no Flutter SDK and only the approved dev deps`
+  - `orbital_core manifest declares only the ADR-0002 runtime dependency, no Flutter SDK and only the approved dev deps` (Amendment 1)
   - `orbital_core/lib never imports dart:io or dart:ffi`
 
 ### REQ-INF-002.10 — Contract test structure and failure semantics
@@ -324,3 +324,10 @@ Nothing below is written in this pull request:
 ## Open Questions
 
 None blocking. `specs/req-inf-001.md` still reads `Status: Draft` although its code is on `main`; updating that status belongs to the developer, not to this pull request.
+
+## Amendment 1 — Name of the core manifest test (2026-11-08)
+
+- **Approved by:** the developer, on 2026-11-08, with ADR-0002 (decision 7) and `specs/req-orb-010.md`.
+- **Why.** REQ-INF-001.3 and REQ-INF-001.8 now allow exactly one runtime dependency in `packages/orbital_core` (req-inf-001, Amendment 1), so the test name `orbital_core manifest declares zero runtime deps, no Flutter SDK and only the approved dev deps` would no longer describe the test.
+- **What changes.** In REQ-INF-002.9, the second of the three test names that the output of `flutter test test/dependency_guard_test.dart --reporter expanded` must contain verbatim is now `orbital_core manifest declares only the ADR-0002 runtime dependency, no Flutter SDK and only the approved dev deps`. The other two names and every other check of REQ-INF-002.9 are unchanged.
+- **Where it is verified.** Command V5 of `specs/req-orb-010.md`.

@@ -38,7 +38,7 @@ The application targets Android exclusively, and its platform identity is fixed 
 
 `packages/orbital_core` is a plain Dart package, not a Flutter package, and it resolves its dependencies on its own.
 
-**Acceptance:** its manifest declares **zero** runtime dependencies and exactly the two development dependencies approved in ADR-0001 for this package; it declares no Flutter SDK dependency and no shared-resolution directive; its test suite passes when invoked from inside the package directory with the plain Dart toolchain.
+**Acceptance:** its manifest declares no runtime dependency other than the one approved by ADR-0002, `satellite_observer` at exactly `1.0.1` (Amendment 1), and exactly the two development dependencies approved in ADR-0001 for this package; it declares no Flutter SDK dependency and no shared-resolution directive; its test suite passes when invoked from inside the package directory with the plain Dart toolchain.
 
 ### REQ-INF-001.4 — One-way dependency proven by a single version constant
 
@@ -79,7 +79,7 @@ A test in the **application** suite enforces the dependency barrier by reading f
 **Acceptance:**
 
 - The guard reads the application manifest at the repository root and fails if any dependency outside the ADR-0001 baseline appears there.
-- The guard reads `packages/orbital_core/pubspec.yaml` and fails if that package declares any runtime dependency, any Flutter SDK dependency, or any development dependency outside the ADR-0001 allowance.
+- The guard reads `packages/orbital_core/pubspec.yaml` and fails if that package declares any runtime dependency other than `satellite_observer`, declares `satellite_observer` at any version other than exactly `1.0.1`, declares no runtime dependency at all, or declares any Flutter SDK dependency or any development dependency outside the ADR-0001 allowance (Amendment 1).
 - The guard iterates over the contents of every file under `packages/orbital_core/lib/` as text and fails explicitly if it finds the substring `import 'dart:io';` or the substring `import 'dart:ffi';`, because neither appears in any manifest and both would otherwise pass unseen.
 - Every failure message names Constitution principle 3 and points at ADR-0001.
 - The guard resolves all three locations relative to the repository, not to the working directory, and fails rather than skips when a file or directory it expects is absent.
@@ -168,3 +168,10 @@ Nothing below is to be written in this pull request, under any circumstance, eve
 - [NEEDS CLARIFICATION] Whether the git root is the current `WintekSDD/` directory or its parent. The layout decision placed the application at the root of `WintekSDD/`; the question is only whether that folder name survives as the repository name.
 - [NEEDS CLARIFICATION] Android `minSdkVersion` and `targetSdkVersion`. Flutter defaults are assumed; the reference device runs a recent Android, so nothing in the MVP forces a change.
 - [NEEDS CLARIFICATION] Whether the application label stays `Wintek` if the naming question of the brief resolves differently. Changing the label later is cheap; changing `cl.wintek.app` is not.
+
+## Amendment 1 — Runtime dependency of the SGP4 adapter (2026-11-08)
+
+- **Approved by:** the developer, on 2026-11-08, with ADR-0002 (decision 7) and `specs/req-orb-010.md`.
+- **Why.** Roadmap row 12 wraps an SGP4 library behind an adapter in `packages/orbital_core`, as the Project Brief and ADR-0001 (Out of scope) foresaw. Constitution principle 3 allows it because the library is pure Dart. ADR-0002 chooses `satellite_observer` and pins it to exactly `1.0.1`, because the package has no committed lockfile.
+- **What changes.** REQ-INF-001.3 and REQ-INF-001.8 allow exactly that one runtime dependency, at exactly that version, in `packages/orbital_core/pubspec.yaml`. Everything else in them is unchanged: no Flutter SDK dependency, no shared resolution, the ADR-0001 development dependencies, and no `dart:io` or `dart:ffi` under `packages/orbital_core/lib/`.
+- **Where it is verified.** `test/dependency_guard_test.dart`, renamed as REQ-INF-002.9 (Amendment 1) states, and the guard of req-orb-010 (REQ-ORB-010.9).
