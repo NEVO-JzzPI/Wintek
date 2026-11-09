@@ -26,6 +26,11 @@ const Set<String> _allowedAppDevDeps = {'flutter_test', 'flutter_lints'};
 
 const Set<String> _allowedCoreDevDeps = {'lints', 'test'};
 
+// ADR-0002: the SGP4 library is the only runtime dependency of orbital_core,
+// pinned to an exact version.
+const Set<String> _allowedCoreRuntimeDeps = {'satellite_observer'};
+const String _coreSgp4PinLine = '  satellite_observer: 1.0.1';
+
 /// Returns the set of top-level dependency names declared directly under
 /// [sectionName] (a two-space-indented key, not a nested field).
 Set<String> _topLevelKeysUnderSection(String yamlContent, String sectionName) {
@@ -83,7 +88,7 @@ void main() {
     );
   });
 
-  test('orbital_core manifest declares zero runtime deps, no Flutter SDK and only the approved dev deps', () {
+  test('orbital_core manifest declares only the ADR-0002 runtime dependency, no Flutter SDK and only the approved dev deps', () {
     final coreManifestFile = File(
       '${repoRoot.path}/packages/orbital_core/pubspec.yaml',
     );
@@ -97,9 +102,15 @@ void main() {
     final runtimeDeps = _topLevelKeysUnderSection(content, 'dependencies');
     expect(
       runtimeDeps,
-      isEmpty,
+      equals(_allowedCoreRuntimeDeps),
       reason:
-          'orbital_core must declare zero runtime dependencies, found $runtimeDeps. $_principle3',
+          'orbital_core must declare exactly the ADR-0002 runtime dependency $_allowedCoreRuntimeDeps, found $runtimeDeps. $_principle3',
+    );
+    expect(
+      content.split('\n').map((line) => line.trimRight()),
+      contains(_coreSgp4PinLine),
+      reason:
+          'orbital_core must pin satellite_observer to exactly 1.0.1 ("$_coreSgp4PinLine"). $_principle3',
     );
 
     expect(

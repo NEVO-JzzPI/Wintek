@@ -9,6 +9,7 @@ export 'src/kepler_propagator.dart';
 export 'src/orbital_elements.dart';
 export 'src/perifocal.dart';
 export 'src/propagator.dart';
+export 'src/sgp4_propagator.dart';
 export 'src/state_vector.dart';
 export 'src/tle_parser.dart';
 
