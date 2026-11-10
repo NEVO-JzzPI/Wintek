@@ -20,7 +20,7 @@ La app rastrea cuatro objetos, cada uno con un tipo de órbita distinto, a parti
 | ISS | 25544 | LEO, \~51,6° | Estación espacial de referencia |
 | Tiangong (CSS) | 48274 | LEO, \~41,5° | Segunda estación, otra inclinación |
 | [FASat-Charlie (SSOT)](https://keeptrack.space/satellite/38011) | 38011 | LEO polar heliosincrónica, \~628 km, 97,8° | Satélite chileno; requisito del autor |
-| GOES-East | por confirmar en CelesTrak | Geoestacionaria, \~35.786 km | Parece fijo sobre la Tierra: demuestra la rotación de marcos |
+| GOES-East | 60133 (GOES 19) | Geoestacionaria, \~35.786 km | Parece fijo sobre la Tierra: demuestra la rotación de marcos |
 
 - **Formato:** GP data de CelesTrak en JSON (OMM) o TLE, una consulta por objeto o un grupo filtrado.
 - **Refresco:** como máximo una descarga cada pocas horas, según la política de uso de CelesTrak.
@@ -131,7 +131,7 @@ Cada requisito vive como spec en el repositorio y se verifica con un test; la ma
 **Abierto**
 
 - [ ] Confirmar el nombre final (Skytrace, Apsis u OrbitLens) y que esté libre en Play Store y GitHub
-- [ ] Confirmar qué satélite es hoy GOES-East y su NORAD ID en CelesTrak
+- [x] Confirmar qué satélite es hoy GOES-East y su NORAD ID en CelesTrak
 - [ ] Elegir la librería SGP4 de pub.dev y verificar su mantenimiento
 - [ ] Elegir el dataset de contornos de continentes y su licencia
 
