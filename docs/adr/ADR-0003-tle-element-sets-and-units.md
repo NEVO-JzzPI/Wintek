@@ -26,6 +26,7 @@ Every other value of the element set follows principle 12 without exception: ang
 - req-dat-002 downloads CelesTrak GP data in TLE format and removes the name line before handing the two element lines to the parser.
 - req-orb-010 owns the Earth radius and any other gravity-model constant of SGP4; the element model carries none. Amendment 1 places the gravitational parameter of the in-house Kepler propagator in req-orb-005.
 - Catalog numbers above 99999 (Alpha-5) are not supported. Supporting them, or moving to OMM, requires a new ADR that supersedes decision 1.
+  - **Note (2026-11-10, req-dat-001):** GOES-East is GOES 19, catalog number 60133, which has five digits. Decision 1 holds and no superseding ADR is needed.
 - Any further unit exception requires its own ADR; this one does not generalize.
 - `specs/req-orb-002.md` mentions a possible ADR-0003 for the GMST model. That number is now taken; a GMST ADR, if one is ever written, takes the next free number.
 
