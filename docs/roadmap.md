@@ -17,7 +17,7 @@ Strict build order: every row is one future `specs/<id>.md` and one pull request
 [X]| req-orb-009 | Propagator interface and Kepler implementation | Freeze the one seam every propagator implements: a common state that carries GMST, ECEF and the inertial position and velocity, a Kepler state that adds M and E, a failure type and the element set it was built from, so math mode and the derived values of req-orb-008 later need no refactor. |
 [X]| req-orb-010 | SGP4 adapter behind the interface | Wrap the library chosen in ADR-0002 and validate it against the official test vectors, delivering the realistic propagation the MVP renders. |
 [X]| req-dat-001 | Satellite catalog | Fix the four tracked objects and their NORAD IDs as domain constants, closing the open GOES-East question before any request is written. |
-| req-dat-002 | CelesTrak GP client | Fetch OMM/TLE data with one request per dataset and typed failures, the app's only network boundary. |
+[X]| req-dat-002 | CelesTrak GP client | Fetch OMM/TLE data with one request per dataset and typed failures, the app's only network boundary. |
 | req-dat-003 | Local element cache | Persist the last good payload with its fetch timestamp under app storage, so a cold start needs no network and a deleted cache is harmless. |
 | req-dat-004 | Element repository and refresh policy | Implement the domain interface that serves the cache, refreshes only past the age threshold and exposes data age — what makes offline a feature instead of an error. |
 | req-tim-001 | Simulation clock | Advance a single UTC clock with a `Ticker`, the one time source every propagation reads. |
