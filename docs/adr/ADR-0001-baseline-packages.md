@@ -1,6 +1,6 @@
 # ADR-0001 — Baseline packages
 
-- **Status:** Accepted. Superseded in part by ADR-0002 (2026-11-08): `packages/orbital_core` declares one runtime dependency; see the note under the `packages/orbital_core` table.
+- **Status:** Accepted. Superseded in part by ADR-0002 (2026-11-08): `packages/orbital_core` declares one runtime dependency; see the note under the `packages/orbital_core` table. Qualified by req-dat-003 (2026-11-14): settings do not ride in a cache file; see the note under Out of scope.
 - **Date:** 2026-10-20
 - **Relates to:** Constitution principles 1 (one stack), 3 (pure-Dart core), 5 (dependencies point inward)
 
