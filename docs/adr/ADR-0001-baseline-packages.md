@@ -46,6 +46,7 @@ Versions are the latest stable at setup time, recorded as caret ranges in `pubsp
 - **SGP4 library → ADR-0002 (week 3).** Not needed for weeks 1–2 and the candidates are not evaluated yet. It must be pure Dart (no FFI, no platform plugin) so the adapter can live inside `orbital_core`, and it must reproduce the official SGP4 test vectors before it is accepted.
 - **Coastline dataset** and its licence: separate ADR when the geometry source is chosen.
 - `shared_preferences`, `dio`, `freezed`, `json_serializable`, any 3D engine and any WebView: not approved. Settings ride in the same cached JSON until a spec proves that insufficient.
+  - **Note (2026-11-14, req-dat-003):** The element cache keeps one JSON file per tracked object, and every write replaces its file whole, so no setting can ride in a cache file. Settings, when a spec needs them, get their own JSON file in the same directory. The approved packages are unchanged.
 
 ## Consequences
 

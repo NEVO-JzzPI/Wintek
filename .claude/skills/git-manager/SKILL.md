@@ -27,6 +27,7 @@ Al invocarse este skill con el ID `$ARGUMENTS`, haz lo siguiente:
    - El ID del Requerimiento resuelto (`$ARGUMENTS`).
    - Un checklist verificando que el análisis estático y los tests pasaron (`[x] flutter analyze zero issues`).
    - El registro de que los *Negative Checks* manuales (si `specs/$ARGUMENTS.md` los pedía) fueron ejecutados.
+6. **Implementación ya en `main` sin PR:** Antes del paso 1, ejecuta `git fetch origin` y revisa si `origin/main` ya contiene el commit de `$ARGUMENTS`. Si es así, no crees rama, commit ni PR. Genera el mismo checklist del paso 5 y propón al usuario dejarlo como comentario en ese commit de GitHub (`gh api repos/{owner}/{repo}/commits/<sha>/comments -f body=...`); publícalo solo si el usuario lo confirma.
 
 ## Restricciones Absolutas
 - NUNCA hagas un commit directamente en la rama `main`.
