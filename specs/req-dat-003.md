@@ -1,6 +1,6 @@
 # req-dat-003 — Local element cache
 
-- **Status:** Draft (revision 5), after the fourth QA audit, pending a fifth audit. The first audit was made by the author of the spec, and the second to fourth by sessions that did not draft the revision they audited; the fifth should again be made by a session that did not draft revision 5.
+- **Status:** Draft (revision 6), after the fifth QA audit, pending the decisions listed under Open Questions and a sixth audit. The first audit was made by the author of the spec, and the second to fifth by sessions that did not draft the revision they audited; the sixth should again be made by a session that did not draft revision 6.
   - **Approved before drafting (2026-11-14):**
     - one cache file per tracked object, named from its `noradId`, so a damaged file costs one object and never four;
     - the cache directory is injected; req-dat-004 resolves it as the application support directory of `path_provider`, which the operating system does not clear on its own, so the offline feature of Constitution principle 9 does not vanish unannounced;
@@ -29,7 +29,11 @@
     - Fixed in the text: 2 (`OrbitalElements.fromTle` takes no catalog number; its result is compared), 4 (finding 20 of the second audit is listed once), 5 (which definitions come from req-dat-002, and how three of them differ), 6 (`dart:async` is named wherever the libraries of the cache are listed).
     - Decided by the developer: 7 (the pull request checklist is the record of progress of the implementation, and the roadmap checkbox belongs to the QA workflow); 14 (a size limit of 65536 bytes on a read and on a write, and no whole-file read); 15 (duplicate members are informative: the last one wins); 17 (every valid write replaces the stored document, whatever its arrival instant; the order is req-dat-004's decision).
     - No finding: 8 and 18.
-  - **Approved for revision 5 (2026-11-14):** finding 7 of the fourth QA audit, fixed in requirements and tests: the bound of a read is a fixed constant and one `.read(` call that the guard checks by text, with no other read API and no loop in the cache library file, and G rows that include a read of the whole file. The other findings of the fourth audit are not addressed in this revision.
+  - **Approved for revision 5 (2026-11-14):** finding 7 of the fourth QA audit, fixed in requirements and tests: the bound of a read is a fixed constant and one `.read(` call that the guard checks by text, with no other read API and no loop in the cache library file, and G rows that include a read of the whole file. Every other finding of the fourth audit is accepted without change by the developer (decided for revision 6).
+  - **Approved for revision 6 (2026-11-14):** the critical findings of the fifth QA audit, as follows.
+    - Fixed in the text and the local checks: 10 (the base of V10 is the merge base of the implementation branch and `main`, so a commit that reaches `main` after the spec, such as the roadmap checkbox of this row, never enters its list).
+    - Fixed in this Status line: 5 (the findings of the fourth audit other than 7 now have a disposition).
+    - Pending the developer's decision, listed under Open Questions: 1 to 4, 7 to 9 and 11 to 14. No finding: 6 and 15.
   - **Beyond roadmap row 15:** the dated note in ADR-0001 and its mention in the Status line (REQ-DAT-003.7), and the wording of roadmap row 16. Otherwise nothing: the roadmap row asks for "the last good payload with its fetch timestamp under app storage"; req-dat-002 produces that timestamp, and this spec stores it.
 - **Roadmap row:** 15 of 33 (MVP)
 - **Blocks:**
@@ -313,7 +317,7 @@ The new test files follow the hygiene rules of req-dat-002, and the unit test fi
 - **Missing files fail.** Each of the following produces a failing test when missing, never a skipped or passing one: the cache library file, the `lib` directory, the unit test file, the snapshot data file, the spec file and the ADR file. A missing guard test file is caught by V2.
 - **Failure messages.** Every failure message of the guard test file starts with `[REQ-DAT-003.N]`, where N is the requirement whose check failed, and carries `specs/req-dat-003.md` on the same line as that tag.
 
-**Acceptance (verified by command V10).** Compared with the base of V10, the commit that brought this spec into `main`, the implementation changes exactly the three files of V10. The one allowed exception is the spec file: when the implementation needs a behaviour change, it may also change `specs/req-dat-003.md`, with the developer's approval linked in the pull request description (Constitution principle 2). V10 is a local check: CI does not run it, and the pull request checklist reports its result.
+**Acceptance (verified by command V10).** Compared with the base of V10, the commit where the implementation branch leaves `main`, the implementation changes exactly the three files of V10. The one allowed exception is the spec file: when the implementation needs a behaviour change, it may also change `specs/req-dat-003.md`, with the developer's approval linked in the pull request description (Constitution principle 2). V10 is a local check: CI does not run it, and the pull request checklist reports its result.
 
 ### REQ-DAT-003.7 — The settings note in ADR-0001
 
@@ -350,7 +354,7 @@ All commands in this section run from a POSIX shell with GNU `sed`: Git Bash on 
 | V7 | `grep -ohE "// REQ-DAT-003\.[0-9]+" test/data/element_cache_test.dart \| LC_ALL=C sort -u \| paste -sd, -` | standard output `// REQ-DAT-003.1,// REQ-DAT-003.2,// REQ-DAT-003.3,// REQ-DAT-003.4` | REQ-DAT-003.6 (tags of the unit test file) |
 | V8 | `dart pub get && dart analyze --fatal-infos && dart test`, inside `packages/orbital_core` | exit 0 | The core is untouched and still passes on its own (Constitution principle 3) |
 | V9 | `{ grep -rlE "package:http/\|HttpClient\|Socket\|InternetAddress" lib; grep -rli "celestrak\.org" lib; } \| LC_ALL=C sort -u \| paste -sd, -` | standard output `lib/data/celestrak_gp_client.dart` | REQ-DAT-002.4 still holds: the cache is not a network boundary |
-| V10 | `git diff --name-only <base>...HEAD \| LC_ALL=C sort \| paste -sd, -`, where `<base>` is the base of V10 below | standard output `lib/data/element_cache.dart,test/data/element_cache_test.dart,test/element_cache_guard_test.dart`; or, only when the pull request links the developer's approval of a spec diff, the same list with `specs/req-dat-003.md` appended | REQ-DAT-003.6 (only the files of this spec change) |
+| V10 | `git diff --name-only origin/main...HEAD \| LC_ALL=C sort \| paste -sd, -`, after `git fetch origin main` and with the preconditions of the base of V10 below | standard output `lib/data/element_cache.dart,test/data/element_cache_test.dart,test/element_cache_guard_test.dart`; or, only when the pull request links the developer's approval of a spec diff, the same list with `specs/req-dat-003.md` appended | REQ-DAT-003.6 (only the files of this spec change) |
 | V11 | `grep -rlE "25544\|48274\|38011\|60133" lib packages/orbital_core/lib \| paste -sd, -` | standard output `lib/domain/satellite_catalog.dart` | req-dat-001 one source of truth still holds |
 | V12 | `grep -rl "path_provider" lib \| paste -sd, -` | empty standard output | REQ-DAT-003.5: no library file looks up the cache directory yet |
 | V13 | `git status --porcelain --ignored > /tmp/v13_before && flutter test --no-pub test/data/element_cache_test.dart > /dev/null && git status --porcelain --ignored \| diff /tmp/v13_before -` | exit 0 and empty standard output | REQ-DAT-003.6: no unit test writes into the repository, ignored paths included |
@@ -362,7 +366,12 @@ Inside the table, `\|` is a single pipe. The CI workflow of req-inf-002 runs V3 
 - V13 runs after every file of the implementation is committed, like the negative checks below, and after V1, so the files that `flutter test` itself creates already exist; `git status --porcelain` must print nothing before it, and with uncommitted work V13 proves nothing and counts as not run. V13 compares the untracked and ignored paths before and after the unit tests, so a new file in an ignored path is seen too. An ignored directory that already exists is listed as one line, so a file written inside it is not seen; the rules "Temporary directories only" of REQ-DAT-003.6 cover that case, and no command can see a write outside the repository.
 - V1 and rows M2 and M17 below also run on a machine whose UTC offset at L1 is not zero, such as `-03:00` in Chile, and the pull request checklist records that offset. On a machine at offset zero, such as the CI runner, L1 and T1 denote the same moment, so the L1 case cannot tell a local instant from a UTC one; a run of these rows at offset zero counts as not run.
 
-**Base of V10.** V10 compares against the commit that brought this spec into `main`, not against `origin/main`. On the first run, after `git fetch origin main`, find it with `git log --first-parent --format=%H -1 origin/main -- specs/req-dat-003.md`, and record that hash in the pull request checklist. With `--first-parent`, the command finds that commit whichever way the spec reached `main`: a merge commit, a squashed or rebased pull request, or a direct push. Every later run uses the recorded hash, so a later commit that touches the spec cannot move the base. If the command prints nothing, V10 counts as not run, never as a pass or a failure.
+**Base of V10.** The base is the merge base of the implementation branch and `main`, the newest commit that both histories share: `git diff origin/main...HEAD` compares `HEAD` with it. So a commit that reaches `main` after the spec, such as the roadmap checkbox of this row, another spec or a fix, never enters the list, whether the branch was created before or after that commit, and whether `main` was later merged into the branch or the branch rebased onto it. Run `git fetch origin main` before every run of V10. Two preconditions come first; when either fails, V10 counts as not run, never as a pass or a failure:
+
+- `git log --first-parent --format=%H -1 origin/main -- specs/req-dat-003.md` prints a hash S, so the spec has reached `main`. With `--first-parent`, the command finds that commit whichever way the spec reached `main`: a merge commit, a squashed or rebased pull request, or a direct push.
+- `git merge-base --is-ancestor S HEAD` exits with 0, so the implementation branch contains the spec.
+
+The pull request checklist records S and the output of `git merge-base origin/main HEAD` at the run that it reports.
 
 **Precondition of the new files.** Save the new files as UTF-8 without BOM and with LF. `.gitattributes` (`* text=auto eol=lf`) normalizes what enters the repository, but a Windows editor can still write CRLF into the working tree, and REQ-DAT-003.6 reads the working tree. If V0 prints less than `2`, rewrite each file that `git ls-files --eol` shows with `w/crlf` from the index, for example `rm docs/adr/ADR-0001-baseline-packages.md && git checkout -- docs/adr/ADR-0001-baseline-packages.md`, and run V0 again.
 
@@ -544,7 +553,7 @@ Inside the table, `\|` is a single pipe.
 
 No row removes `import 'support/repo_root.dart';` from the guard test file. That edit stops the file from compiling, so V2 fails without printing any tag; the import line check is kept as a second line of defence.
 
-**Pull request checklist.** The description of the pull request that implements this spec lists V0–V13, with the base hash of V10 and the UTC offset of the machine that ran V1, M2 and M17, U1–U5, M1–M26 with their diffs, G0 and G1–G98, with the diffs of G77 and G98, each with its observed result. A pull request without this list is incomplete regardless of its check status. This checklist is the one manual step of this spec: a reviewer reads it, and no command verifies it.
+**Pull request checklist.** The description of the pull request that implements this spec lists V0–V13, with the hash S and the merge base of V10 and the UTC offset of the machine that ran V1, M2 and M17, U1–U5, M1–M26 with their diffs, G0 and G1–G98, with the diffs of G77 and G98, each with its observed result. A pull request without this list is incomplete regardless of its check status. This checklist is the one manual step of this spec: a reviewer reads it, and no command verifies it.
 
 **Record of progress.** The checklist is also the record of progress of the implementation that AGENTS.md asks for ("mark its progress"): the implementation changes neither the spec file, except as V10 allows, nor `docs/roadmap.md`. The roadmap checkbox of this row is set by the QA workflow, outside the implementation.
 
@@ -582,6 +591,7 @@ These cases are normative where a requirement above tests them, and informative 
 - **A programming error.** A Dart `Error`, such as a `StateError` or a `TypeError` from a bug in the cache, is not caught, so a bug is never reported as an empty cache (REQ-DAT-003.5).
 - **The name line.** It is stored and returned as the GP client served it. The display name of the app comes from the catalog, never from this line (req-dat-002).
 - **Network or CI failure while verifying.** No check of this spec uses CelesTrak or builds an APK. A failed `flutter pub get`, a timeout, a runner out of memory or a failed analysis is handled as req-inf-002 defines and never counts as a pass. A U, M or G row whose output shows a compilation or resolution error of the file it targets, instead of the expected tag, counts as not run, never as a pass.
+- **Commits on `main` after the spec (informative).** The roadmap checkbox of this row, another spec or any fix can reach `main` between the spec and its implementation. V10 compares with the merge base, so none of them is listed, and the implementation never has to touch a file that this spec puts out of its scope (Local checks, base of V10).
 - **Repository root not found.** The guard test file uses `findRepoRoot` from `test/support/repo_root.dart`, which fails with `Cannot resolve the repository root`. It never skips.
 - **Shell.** The commands need a POSIX shell with GNU `sed`. In PowerShell they fail with "command not found"; that is an environment error, never a pass. In Git Bash on Windows, set `MSYS_NO_PATHCONV=1` when scripting edits whose arguments start with `/`, and confirm with `git diff` that each edit applied before reading its result.
 
@@ -610,4 +620,16 @@ Nothing below is written in the implementation:
 
 ## Open Questions
 
-None.
+Findings of the fifth QA audit, pending the developer's decision. Each is fixed, accepted without change or rejected in a revision of this spec before it is implemented.
+
+- **1.** The bounded read relies on the reviewer for a `.read(` call repeated by recursion or through a closure (REQ-DAT-003.5, bounded read).
+- **2.** The length of a stored document depends on an encoding that this spec does not fix, such as whitespace and indentation, so the boundary of a valid success depends on the implementation (Definitions, valid success).
+- **3.** The informative edge case "A short read" says that a short read never yields a valid document; a file of 65537 bytes padded with spaces and read short to 65536 bytes would.
+- **4.** The prefixes `part` and `export` of the import rule have no trailing space, so a code line that starts with an identifier such as `parts` or `exported` fails the guard (REQ-DAT-003.5, imports).
+- **7.** "Contains no LF" of a valid name line is tested neither on a write nor on a read.
+- **8.** "A read changes nothing on disk" is not tested for a read of a valid document (REQ-DAT-003.3).
+- **9.** The size limit is not tested at its boundary on a write (REQ-DAT-003.2).
+- **11.** No requirement makes the cache close the `RandomAccessFile` that it opens, also on a failure path; on Windows a leaked handle blocks the deletion of a test's temporary directory.
+- **12.** Whether a write creates missing ancestors of the cache directory is not fixed, and not tested (REQ-DAT-003.1).
+- **13.** A name line with a lone surrogate is a valid name line, but UTF-8 encoding replaces it with U+FFFD, so a write completes with `true` without storing the document of its success.
+- **14.** Whether a document that starts with a UTF-8 BOM is a valid stored document is not fixed, and not tested (REQ-DAT-003.4).
