@@ -1,6 +1,6 @@
 # req-dat-003 — Local element cache
 
-- **Status:** Draft (revision 4), after the third QA audit, pending a fourth audit. The first audit was made by the author of the spec, and the second and third by sessions that did not draft the revision they audited; the fourth should again be made by a session that did not draft revision 4.
+- **Status:** Draft (revision 5), after the fourth QA audit, pending a fifth audit. The first audit was made by the author of the spec, and the second to fourth by sessions that did not draft the revision they audited; the fifth should again be made by a session that did not draft revision 5.
   - **Approved before drafting (2026-11-14):**
     - one cache file per tracked object, named from its `noradId`, so a damaged file costs one object and never four;
     - the cache directory is injected; req-dat-004 resolves it as the application support directory of `path_provider`, which the operating system does not clear on its own, so the offline feature of Constitution principle 9 does not vanish unannounced;
@@ -29,6 +29,7 @@
     - Fixed in the text: 2 (`OrbitalElements.fromTle` takes no catalog number; its result is compared), 4 (finding 20 of the second audit is listed once), 5 (which definitions come from req-dat-002, and how three of them differ), 6 (`dart:async` is named wherever the libraries of the cache are listed).
     - Decided by the developer: 7 (the pull request checklist is the record of progress of the implementation, and the roadmap checkbox belongs to the QA workflow); 14 (a size limit of 65536 bytes on a read and on a write, and no whole-file read); 15 (duplicate members are informative: the last one wins); 17 (every valid write replaces the stored document, whatever its arrival instant; the order is req-dat-004's decision).
     - No finding: 8 and 18.
+  - **Approved for revision 5 (2026-11-14):** finding 7 of the fourth QA audit, fixed in requirements and tests: the bound of a read is a fixed constant and one `.read(` call that the guard checks by text, with no other read API and no loop in the cache library file, and G rows that include a read of the whole file. The other findings of the fourth audit are not addressed in this revision.
   - **Beyond roadmap row 15:** the dated note in ADR-0001 and its mention in the Status line (REQ-DAT-003.7), and the wording of roadmap row 16. Otherwise nothing: the roadmap row asks for "the last good payload with its fetch timestamp under app storage"; req-dat-002 produces that timestamp, and this spec stores it.
 - **Roadmap row:** 15 of 33 (MVP)
 - **Blocks:**
@@ -61,7 +62,7 @@ The cache is deliberately small. It knows one directory, one file name per objec
 - **Replacement by rename.** A write first writes the whole document to a temporary file in the cache directory, flushes it to storage, then renames it onto the cache file. A read therefore never sees part of a new document next to part of an old one. After a power loss, a file system may still keep the rename without the data; the cache file is then empty or damaged, a read reports no entry, and the next write repairs it. The previous document is lost in that case, which is the price of not keeping a second copy.
 - **No clock.** The arrival instant is the one that the GP client read from its wall clock after the response arrived (req-dat-002). The cache stores it unchanged, converted to UTC if it is not, and never stamps again, so the data age of req-dat-004 measures the age of the download, not of the write.
 - **Validated on read.** A document is accepted only if it is no longer than the size limit, every member is present with the right type, the schema version is known, the catalog number is the one requested, the element lines are accepted by `OrbitalElements.fromTle` and its result carries that catalog number, and the arrival instant is a UTC instant. A file can be damaged, truncated, edited by hand, padded to any length or written by a future version; none of these may reach a propagator or crash the app. A read changes nothing on disk: it never creates, writes or renames anything, so a missing cache directory stays missing until the next write.
-- **Bounded size (approved for revision 4).** A valid document takes a few hundred bytes. A read never loads more than the size limit plus one byte of a cache file, so a file of any length cannot exhaust memory, and an `OutOfMemoryError`, which is a Dart `Error` and is not caught, cannot come from a cache file. A file longer than the size limit is no entry. A write checks the same limit, so the cache never writes a document that it would refuse to read.
+- **Bounded size (approved for revision 4).** A valid document takes a few hundred bytes. A read never loads more than the size limit plus one byte of a cache file, so a file of any length cannot exhaust memory, and an `OutOfMemoryError`, which is a Dart `Error` and is not caught, cannot come from a cache file. A file longer than the size limit is no entry. A write checks the same limit, so the cache never writes a document that it would refuse to read. The bound is a property of the code, not of a test: a read takes its bytes from one call that asks for the size limit plus one byte, and the guard checks that call, the constant and the absence of any other read or loop by text (REQ-DAT-003.5, bounded read). No unit test can prove the bound, because a file large enough to exhaust memory would exhaust the memory of the runner first.
 - **Failures are values.** A read completes with an entry or with no entry. A write completes with a value that tells whether the cache file now holds the new document. Neither throws for a problem of the file system or of the document. A Dart `Error`, such as a `StateError`, is a programming error and is not caught, neither by a catch clause, nor by an error callback, nor by a zone.
 - **Nothing is deleted or listed.** The cache has no operation that deletes, clears or lists files. A bad file stays until the next good write replaces it. Deleting a cache file, or the whole directory, by hand is harmless: the next read reports no entry and the next write creates both again (Constitution principle 11).
 - **Doc lines without angle brackets.** The fixed doc lines of REQ-DAT-003.5 use `NORADID` as a placeholder instead of a bracketed one. In req-dat-002, the bracketed placeholder of a fixed doc line raised `unintended_html_in_doc_comment`, and the implementation had to disable that lint for the whole client file.
@@ -225,7 +226,7 @@ In addition, when a directory exists at the path of the cache file of ISS, a rea
 
 ### REQ-DAT-003.5 — Placement, public surface, boundaries and documented contract
 
-The cache lives in the data layer, exposes only the cache and its entry, reaches the disk only asynchronously, never reads a whole file, flushes before it renames, never looks up its directory, never reads a clock, never deletes or lists files, never catches a Dart `Error`, and documents its contract in fixed lines.
+The cache lives in the data layer, exposes only the cache and its entry, reaches the disk only asynchronously, reads at most the size limit plus one byte of a file in one call, flushes before it renames, never looks up its directory, never reads a clock, never deletes or lists files, never catches a Dart `Error`, and documents its contract in fixed lines.
 
 **Acceptance (verified by the guard test file):**
 
@@ -245,7 +246,13 @@ The cache lives in the data layer, exposes only the cache and its entry, reaches
 
   So the file declares no public function, constant, variable, enum, typedef, extension or mixin, and no second cache.
 - **Asynchronous only.** The cache library file does not contain the substring `Sync(`.
-- **No whole-file read.** The cache library file contains none of `readAsString`, `readAsBytes`, `readAsLines` and `openRead`. So a read opens the file and reads a bounded number of bytes, and the size limit cannot be bypassed by a read that loads the whole file first.
+- **No whole-file read.** The cache library file contains none of `readAsString`, `readAsBytes`, `readAsLines` and `openRead`.
+- **Bounded read.**
+  - The cache library file contains a line that matches `const int _sizeLimitBytes = 65536;`.
+  - The cache library file contains the substring `.read(` exactly once, and that occurrence is directly followed by `_sizeLimitBytes + 1)`.
+  - The cache library file contains none of `readInto(`, `readByte(`, `while (`, `for (` and `do {`, in code or in comments.
+
+  So the only way the cache takes bytes from a file is one `RandomAccessFile.read` call that asks for at most 65537 bytes, and no loop can repeat it: a read that asks for the length of the file, that reads in chunks or that reads into a buffer of its own fails the guard. A call repeated without a loop keyword, by recursion or through a closure such as one passed to `List.generate`, is not seen by text; the reviewer reads the function that holds the one `.read(` call. The validation of a document needs no loop: it checks six named members, and blank characters at the end of a line are found with `endsWith` or a regular expression.
 - **Flushed before the rename.** The cache library file contains `flush: true` or `.flush(`.
 - **No directory lookup.** The cache library file contains neither `path_provider` nor `getApplication`.
 - **No clock.** The cache library file contains none of `DateTime.now`, `DateTime.timestamp` and `Stopwatch`.
@@ -517,6 +524,15 @@ The edits are defined as in `specs/req-orb-010.md` (Local negative checks). "The
 | G87 | Append the line `// tempDir.parent` to the unit test file | `[REQ-DAT-003.6]` |
 | G88 | Append the line `// File('/gp_25544.json')` to the unit test file | `[REQ-DAT-003.6]` |
 | G89 | Append the line `// File("/gp_25544.json")` to the unit test file | `[REQ-DAT-003.6]` |
+| G90 | Replace every occurrence of `.read(_sizeLimitBytes + 1)` with `.read(_sizeLimitBytes + 2)` in the cache file | `[REQ-DAT-003.5]` |
+| G91 | Replace the line `const int _sizeLimitBytes = 65536;` with `const int _sizeLimitBytes = 1 << 30;` in the cache file | `[REQ-DAT-003.5]` |
+| G92 | Append the line `// raf.read(1);` to the cache file | `[REQ-DAT-003.5]` |
+| G93 | Append the line `// raf.readInto(buffer);` to the cache file | `[REQ-DAT-003.5]` |
+| G94 | Append the line `// raf.readByte();` to the cache file | `[REQ-DAT-003.5]` |
+| G95 | Append the line `// while (true) {}` to the cache file | `[REQ-DAT-003.5]` |
+| G96 | Append the line `// for (final chunk in chunks) {}` to the cache file | `[REQ-DAT-003.5]` |
+| G97 | Append the line `// do {` to the cache file | `[REQ-DAT-003.5]` |
+| G98 | By hand, like an M row: make the one `.read(` call ask for the length of the file, as in `raf.read(await raf.length())`, keep the size check on the bytes it returns, and show the diff in the pull request | `[REQ-DAT-003.5]` |
 
 Inside the table, `\|` is a single pipe.
 
@@ -528,7 +544,7 @@ Inside the table, `\|` is a single pipe.
 
 No row removes `import 'support/repo_root.dart';` from the guard test file. That edit stops the file from compiling, so V2 fails without printing any tag; the import line check is kept as a second line of defence.
 
-**Pull request checklist.** The description of the pull request that implements this spec lists V0–V13, with the base hash of V10 and the UTC offset of the machine that ran V1, M2 and M17, U1–U5, M1–M26 with their diffs, G0 and G1–G89, with the diff of G77, each with its observed result. A pull request without this list is incomplete regardless of its check status. This checklist is the one manual step of this spec: a reviewer reads it, and no command verifies it.
+**Pull request checklist.** The description of the pull request that implements this spec lists V0–V13, with the base hash of V10 and the UTC offset of the machine that ran V1, M2 and M17, U1–U5, M1–M26 with their diffs, G0 and G1–G98, with the diffs of G77 and G98, each with its observed result. A pull request without this list is incomplete regardless of its check status. This checklist is the one manual step of this spec: a reviewer reads it, and no command verifies it.
 
 **Record of progress.** The checklist is also the record of progress of the implementation that AGENTS.md asks for ("mark its progress"): the implementation changes neither the spec file, except as V10 allows, nor `docs/roadmap.md`. The roadmap checkbox of this row is set by the QA workflow, outside the implementation.
 
@@ -549,6 +565,7 @@ These cases are normative where a requirement above tests them, and informative 
 - **A file of another object.** A cache file that holds a document of another object, or a document whose `noradId` member or element lines belong to another object, fails the catalog-number rules and is read as no entry, so an element set is never filed under the wrong object (REQ-DAT-003.4).
 - **A document from another version of the app.** A schema version other than the JSON integer `1` is read as no entry (REQ-DAT-003.4). A later spec that changes the document raises the version in a revision of this spec, and decides then whether to read version `1` too.
 - **A file of any length.** A read loads at most the size limit plus one byte, so a cache file padded or filled to any length, even larger than the memory of the device, is read as no entry without loading it (REQ-DAT-003.4), and a file of exactly the size limit is still read (REQ-DAT-003.3). A success whose document would be longer is not written (REQ-DAT-003.2). A document of the GP client takes a few hundred bytes, so the limit never refuses a real one.
+- **A short read (informative).** The one `.read(` call may return fewer bytes than it asked for. For a regular local file this happens only at the end of the file; if it ever happened earlier, the bytes would not decode to a valid document and the read would report no entry, never a wrong one. The read is not repeated, because a repeated read is what the bounded-read rule excludes (REQ-DAT-003.5).
 - **Extra members.** A member that this spec does not define is ignored on read (REQ-DAT-003.3). A write never adds one.
 - **Null and mistyped members.** A member set to `null`, or to a value of another JSON type, is read as no entry like a missing member (REQ-DAT-003.4), and never as a `TypeError` of a cast, which would not be caught.
 - **Duplicate members (informative).** JSON text can repeat a member name. `jsonDecode` keeps the last value of each name, and the validation applies to that value; this spec neither detects nor rejects the repetition. A write never repeats a member.
