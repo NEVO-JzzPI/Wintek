@@ -1,6 +1,6 @@
 # req-dat-003 — Local element cache
 
-- **Status:** Draft (revision 3), after the second QA audit, pending a third audit. The first audit was made by the author of the spec and the second by a session that did not draft it; the third should again be made by a session that did not draft revision 3.
+- **Status:** Draft (revision 4), after the third QA audit, pending a fourth audit. The first audit was made by the author of the spec, and the second and third by sessions that did not draft the revision they audited; the fourth should again be made by a session that did not draft revision 4.
   - **Approved before drafting (2026-11-14):**
     - one cache file per tracked object, named from its `noradId`, so a damaged file costs one object and never four;
     - the cache directory is injected; req-dat-004 resolves it as the application support directory of `path_provider`, which the operating system does not clear on its own, so the offline feature of Constitution principle 9 does not vanish unannounced;
@@ -21,9 +21,14 @@
     - No change needed: 20 and 21.
   - **Approved for revision 3 (2026-11-14):** findings of the second QA audit, as follows.
     - Fixed in requirements and tests: 1 (catch clauses by allow-list, `on` clauses without `catch` included), 2 (`DateTime.timestamp` and `Stopwatch`), 12 and 19 (element lines without trailing blanks), 16 (a leftover temporary file), 17 (a read when the cache directory is a file).
-    - Fixed in the text: 8 (the doc line of the arrival instant), 15 (the base of V10 is the first-parent commit that last changed the spec file, whatever way it reached `main`), 20 (time zone of the runner).
-    - Decided by the developer: 10 and 11 (the note stays in ADR-0001, and the Status line of ADR-0001 mentions it, checked by REQ-DAT-003.7); 13 (roadmap row 16 now says that req-dat-004 resolves the cache directory); 20 (V1, M2 and M17 run at a non-zero UTC offset, recorded in the checklist).
+    - Fixed in the text: 8 (the doc line of the arrival instant), 15 (the base of V10 is the first-parent commit that last changed the spec file, whatever way it reached `main`).
+    - Decided by the developer: 10 and 11 (the note stays in ADR-0001, and the Status line of ADR-0001 mentions it, checked by REQ-DAT-003.7); 13 (roadmap row 16 now says that req-dat-004 resolves the cache directory); 20 (V1, M2 and M17 run at a non-zero UTC offset, recorded in the checklist, and the edge case "Time zone of the runner" explains why).
     - Accepted without change: 3 (the order of flush and rename is read by the reviewer; no test can simulate a power loss), 4, 5, 6, 7, 9, 14, 18, 21, 22 and 24. No finding: 23.
+  - **Approved for revision 4 (2026-11-14):** findings of the third QA audit, as follows.
+    - Fixed in requirements and tests: 1 (a private declaration is judged by its declared name), 3 (every `group(` and `test(` of the unit test file carries its tag), 9 (G rows for `part`, a missing import, an `export` in the unit test file and a private entry type), 10 (temporary paths only, and V13 also sees ignored files), 11 (null members and non-string element lines), 12 (stream and zone error handlers), 13 (catch lines of extensions and mixins, and a `try` on one line), 16 (a read changes nothing on disk).
+    - Fixed in the text: 2 (`OrbitalElements.fromTle` takes no catalog number; its result is compared), 4 (finding 20 of the second audit is listed once), 5 (which definitions come from req-dat-002, and how three of them differ), 6 (`dart:async` is named wherever the libraries of the cache are listed).
+    - Decided by the developer: 7 (the pull request checklist is the record of progress of the implementation, and the roadmap checkbox belongs to the QA workflow); 14 (a size limit of 65536 bytes on a read and on a write, and no whole-file read); 15 (duplicate members are informative: the last one wins); 17 (every valid write replaces the stored document, whatever its arrival instant; the order is req-dat-004's decision).
+    - No finding: 8 and 18.
   - **Beyond roadmap row 15:** the dated note in ADR-0001 and its mention in the Status line (REQ-DAT-003.7), and the wording of roadmap row 16. Otherwise nothing: the roadmap row asks for "the last good payload with its fetch timestamp under app storage"; req-dat-002 produces that timestamp, and this spec stores it.
 - **Roadmap row:** 15 of 33 (MVP)
 - **Blocks:**
@@ -35,7 +40,7 @@
   - req-orb-003: `OrbitalElements.fromTle`, its `catalogNumber` and the `FormatException` it throws;
   - req-inf-001 and req-inf-002: both suites, the CI gates, the `lib/data` directory of the scaffold and `test/support/repo_root.dart`;
   - ADR-0001: `path_provider` is approved for the directory of the cached JSON (used by req-dat-004), and hand-written JSON with `dart:convert` instead of code generation.
-- **ADR:** none new. This spec adds one dated note to ADR-0001 and mentions it in the Status line of ADR-0001 (REQ-DAT-003.7); the approved packages and the decisions of ADR-0001 are unchanged. The cache uses only the Dart core libraries `dart:convert` and `dart:io`, and the format that ADR-0003 fixes.
+- **ADR:** none new. This spec adds one dated note to ADR-0001 and mentions it in the Status line of ADR-0001 (REQ-DAT-003.7); the approved packages and the decisions of ADR-0001 are unchanged. The cache uses only the Dart core libraries `dart:async`, `dart:convert` and `dart:io`, and the format that ADR-0003 fixes.
 - **No new dependency and no formula.** Neither manifest changes. The cache adds no mathematics, so Constitution principle 6 is not triggered.
 
 ## Context & Objective
@@ -55,14 +60,15 @@ The cache is deliberately small. It knows one directory, one file name per objec
 - **A fixed document.** Each file holds one JSON object with a schema version, the catalog number, the name line, both element lines and the arrival instant. The member names and the meaning of each value are fixed in Definitions, because a file written by one version of the app is read by the next. A change of the document is a new schema version, in a revision of this spec.
 - **Replacement by rename.** A write first writes the whole document to a temporary file in the cache directory, flushes it to storage, then renames it onto the cache file. A read therefore never sees part of a new document next to part of an old one. After a power loss, a file system may still keep the rename without the data; the cache file is then empty or damaged, a read reports no entry, and the next write repairs it. The previous document is lost in that case, which is the price of not keeping a second copy.
 - **No clock.** The arrival instant is the one that the GP client read from its wall clock after the response arrived (req-dat-002). The cache stores it unchanged, converted to UTC if it is not, and never stamps again, so the data age of req-dat-004 measures the age of the download, not of the write.
-- **Validated on read.** A document is accepted only if every member is present with the right type, the schema version is known, the catalog number is the one requested, the element lines are accepted by `OrbitalElements.fromTle` with that catalog number, and the arrival instant is a UTC instant. A file can be damaged, truncated, edited by hand or written by a future version; none of these may reach a propagator or crash the app.
+- **Validated on read.** A document is accepted only if it is no longer than the size limit, every member is present with the right type, the schema version is known, the catalog number is the one requested, the element lines are accepted by `OrbitalElements.fromTle` and its result carries that catalog number, and the arrival instant is a UTC instant. A file can be damaged, truncated, edited by hand, padded to any length or written by a future version; none of these may reach a propagator or crash the app. A read changes nothing on disk: it never creates, writes or renames anything, so a missing cache directory stays missing until the next write.
+- **Bounded size (approved for revision 4).** A valid document takes a few hundred bytes. A read never loads more than the size limit plus one byte of a cache file, so a file of any length cannot exhaust memory, and an `OutOfMemoryError`, which is a Dart `Error` and is not caught, cannot come from a cache file. A file longer than the size limit is no entry. A write checks the same limit, so the cache never writes a document that it would refuse to read.
 - **Failures are values.** A read completes with an entry or with no entry. A write completes with a value that tells whether the cache file now holds the new document. Neither throws for a problem of the file system or of the document. A Dart `Error`, such as a `StateError`, is a programming error and is not caught, neither by a catch clause, nor by an error callback, nor by a zone.
 - **Nothing is deleted or listed.** The cache has no operation that deletes, clears or lists files. A bad file stays until the next good write replaces it. Deleting a cache file, or the whole directory, by hand is harmless: the next read reports no entry and the next write creates both again (Constitution principle 11).
 - **Doc lines without angle brackets.** The fixed doc lines of REQ-DAT-003.5 use `NORADID` as a placeholder instead of a bracketed one. In req-dat-002, the bracketed placeholder of a fixed doc line raised `unintended_html_in_doc_comment`, and the implementation had to disable that lint for the whole client file.
 
 ### Decisions that follow from the Constitution
 
-- **Data layer.** The cache is an implementation detail of the data layer (Constitution principle 5). It imports the catalog of the domain layer, the GP client of the data layer, the core and the Dart core libraries `dart:convert` and `dart:io`; never Flutter, Riverpod, `path_provider` or `package:http`.
+- **Data layer.** The cache is an implementation detail of the data layer (Constitution principle 5). It imports the catalog of the domain layer, the GP client of the data layer, the core and the Dart core libraries `dart:async`, `dart:convert` and `dart:io`; never Flutter, Riverpod, `path_provider` or `package:http`.
 - **Small public surface.** The cache library file declares exactly two public types: the cache and its entry. Everything else in the file is private (REQ-DAT-003.5).
 - **Plain JSON, payloads only.** The document holds the CelesTrak payload of one object and the values needed to file and date it, in plain JSON under app storage, with no account, key or user data (Constitution principle 11).
 - **Off the frame path.** Every file access is asynchronous, and the cache is never called from a painter or a per-frame provider (Constitution principle 13). Wiring it to providers is req-dat-004 and req-sta-001.
@@ -70,7 +76,7 @@ The cache is deliberately small. It knows one directory, one file name per objec
 
 ## Definitions used by every requirement
 
-These definitions are normative. The first eight are copied from `specs/req-dat-002.md` so that this spec does not change meaning when that one is revised; the definition of a declaration line adds `]`.
+These definitions are normative. Blank characters, application library files, line match, code line, import URI, declaration line, public class declaration, private declaration and snapshot entry k are taken from `specs/req-dat-002.md`, so that this spec does not change meaning when that one is revised. Three of them differ from their source: blank characters drops the sentence that applies only to req-dat-002, a declaration line adds `]`, and a private declaration is judged by its declared name instead of by any word of its head, because with the rule of req-dat-002 a public function or variable with a private type, such as `_Doc parseDocument(String text) {`, counts as private. Word, head and declared name are defined here.
 
 - **Blank characters:** space (U+0020), tab (U+0009) and carriage return (U+000D).
 - **Application library files:** every file whose name ends in `.dart` under `lib`, searched recursively.
@@ -78,8 +84,11 @@ These definitions are normative. The first eight are copied from `specs/req-dat-
 - **Code line:** a line whose text, with leading blank characters removed, does not start with `//`.
 - **Import URI:** for a line whose text, with leading blank characters removed, starts with `import ` or `export `, the text between its first two single quotes.
 - **Declaration line:** a line of the cache library file whose first character is not a blank character and that does not start with `//`, `@`, `import `, `}`, `)` or `]`. With `dart format`, these are the first lines of the top-level declarations; a line that starts with `]` closes a collection literal that spans several lines.
+- **Word:** a maximal run of characters none of which is a blank character.
 - **Public class declaration:** a declaration line that starts with `class `, `final class `, `base class ` or `sealed class `, where the next word, the class name, does not start with `_`.
-- **Private declaration:** a declaration line whose head contains a word that starts with `_`. The head is the text before the earliest occurrence of any of `(`, ` =`, `;` or `{`; the whole line if none occurs.
+- **Head:** of a declaration line, the text before the earliest occurrence of any of `(`, ` =`, `;` or `{`; the whole line if none occurs.
+- **Declared name:** of a declaration line, the word that follows the first word of its head that is equal to `class`, `enum`, `mixin`, `extension` or `typedef`, when its head has such a word; otherwise the last word of its head. For `final class _Doc extends Base {` it is `_Doc`; for `final RegExp _digits = RegExp('[0-9]');` it is `_digits`; for `_Doc parseDocument(String text) {` it is `parseDocument`.
+- **Private declaration:** a declaration line whose declared name starts with `_`. A declaration whose head has no word, such as a function that returns a record type, or whose last word is not its name, such as a variable of a function type, is not a private declaration and fails REQ-DAT-003.5; it can be written with a private `typedef` instead.
 - **Snapshot entry k:** as defined by `specs/req-dat-001.md`: the name token, line 1 and line 2 of the tracked object at position k, from 1 to 4.
 - **Cache library file:** `lib/data/element_cache.dart`.
 - **Cache:** the one public type of the cache library file that reads and writes cache files. Its name, the name of the entry type and the names of their members are the implementer's choice, within the public-surface rule of REQ-DAT-003.5.
@@ -87,8 +96,9 @@ These definitions are normative. The first eight are copied from `specs/req-dat-
 - **Success:** a value of the success type of the GP client of req-dat-002. It carries the tracked object, the name line, line 1, line 2 and the arrival instant.
 - **Success of position k at instant T:** the success whose tracked object is the object at position k, whose name line, line 1 and line 2 are those of snapshot entry k, and whose arrival instant is T.
 - **Valid name line:** a string that is not empty, contains no LF and does not end with a blank character.
-- **Valid element lines for an object:** two strings, neither of which ends with a blank character, that `OrbitalElements.fromTle` accepts with a `catalogNumber` equal to the `noradId` of the object. `OrbitalElements.fromTle` removes trailing blank characters before it checks a line (req-orb-003), so without the first condition a line that ends with spaces or a CR would be accepted, although no success of the GP client carries one.
-- **Valid success:** a success whose name line is a valid name line, and whose line 1 and line 2 are valid element lines for its tracked object.
+- **Valid element lines for an object:** two strings, neither of which ends with a blank character, that `OrbitalElements.fromTle` accepts as line 1 and line 2, and for which the `catalogNumber` of its result is equal to the `noradId` of the object. `OrbitalElements.fromTle` takes no catalog number; the result is compared after the call. It removes trailing blank characters before it checks a line (req-orb-003), so without the first condition a line that ends with spaces or a CR would be accepted, although no success of the GP client carries one.
+- **Size limit:** 65536 bytes.
+- **Valid success:** a success whose name line is a valid name line, whose line 1 and line 2 are valid element lines for its tracked object, and whose stored document, encoded as JSON text in UTF-8, is no longer than the size limit.
 - **Cache directory:** the directory that the cache receives when it is created.
 - **Cache file of an object:** the file named `gp_` followed by the decimal `noradId` of the object, with no leading zeros, followed by `.json`, directly inside the cache directory. For ISS, `gp_25544.json`.
 - **Temporary file of an object:** the file named like its cache file followed by `.tmp`, directly inside the cache directory. For ISS, `gp_25544.json.tmp`.
@@ -107,7 +117,7 @@ These definitions are normative. The first eight are copied from `specs/req-dat-
   - `noradId`: the `noradId` of the success's object, as a JSON integer;
   - `nameLine`, `line1` and `line2`: the name line, line 1 and line 2 of the success, as strings;
   - `fetchedAtUtc`: the arrival text of the success's arrival instant.
-- **Valid stored document for an object:** a text that decodes as JSON to an object that has at least the six members above, where:
+- **Valid stored document for an object:** a sequence of bytes, no longer than the size limit, that decodes as UTF-8 and then as JSON to an object that has at least the six members above, none of them `null`, where:
   - `schemaVersion` is the JSON integer `1`;
   - `noradId` is a JSON integer equal to the `noradId` of the object;
   - `nameLine` is a valid name line;
@@ -116,7 +126,7 @@ These definitions are normative. The first eight are copied from `specs/req-dat-
 
   Members other than these six are ignored.
 - **Valid document of position k:** the stored document of the success of position k at T1, encoded as JSON text.
-- **Catch line:** a code line of the cache library file that contains `catch (` or ` on `, or whose text, with leading blank characters removed, starts with `on `. An `on` clause without `catch` handles exceptions too, so it is a catch line.
+- **Catch line:** a code line of the cache library file that contains `catch (`, or whose text, with leading blank characters removed, starts with `on `, or that contains ` on ` and is not an extension or mixin header. An extension or mixin header is a line whose text, with leading blank characters removed, starts with `extension ` or `mixin `, and that contains ` on ` exactly once and `catch (` nowhere. An `on` clause without `catch` handles exceptions too, so it is a catch line, also when the whole `try` stands on one line. A string literal or a trailing comment that contains ` on ` also makes its line a catch line, which then fails the allowed catch prefixes; such text is written another way.
 - **Allowed catch prefixes:** `} on FileSystemException catch (`, `} on FileSystemException {`, `} on FormatException catch (` and `} on FormatException {`. `FileSystemException` covers its subclasses, such as `PathNotFoundException`; `FormatException` is what `jsonDecode`, `DateTime.parse` and `OrbitalElements.fromTle` throw for bad text.
 
 ## Functional Requirements
@@ -152,14 +162,15 @@ A write that cannot store its document, or whose success is not a valid success,
   - the success of position 1 at T1 with an empty name line;
   - the success of position 1 at T1 with three spaces appended to the name line;
   - the success of position 1 at T1 with a carriage return (U+000D) appended to line 1;
-  - the success of position 1 at T1 with three spaces appended to line 2.
+  - the success of position 1 at T1 with three spaces appended to line 2;
+  - the success of position 1 at T1 with a name line of 70000 letters `A`, whose stored document is longer than the size limit.
 - **Not a valid success, after a good write.** A write of the success of position 1 at T1 completes with `true`. Then a write of the success of position 1 at T2 with a bad checksum, as above, completes with `false`, and the cache file of ISS holds, byte for byte, what it held after the first write.
 
 That a Dart `Error` is not caught is verified by the guard test file (REQ-DAT-003.5, no Dart `Error` caught).
 
 ### REQ-DAT-003.3 — Read
 
-A read returns the entry of a valid stored document as it was written, from any cache on the same directory, and no entry when there is no cache file.
+A read returns the entry of a valid stored document as it was written, from any cache on the same directory, and no entry when there is no cache file. A read changes nothing on disk.
 
 **Acceptance (verified by the unit test file).**
 
@@ -171,9 +182,10 @@ A read returns the entry of a valid stored document as it was written, from any 
   So the entry comes from the file, not from memory, as after a restart.
 - **Microseconds.** After a write of the success of position 1 at T3, a read of ISS completes with an entry whose arrival instant is equal to T3.
 - **Ignored members.** A cache file of ISS that holds the valid document of position 1 with one more member, `"extra": true`, is read as the entry of that document.
+- **At the size limit.** A cache file of ISS that holds the valid document of position 1 followed by spaces (U+0020), so that the file is exactly 65536 bytes long, is read as the entry of that document.
 - **No cache file.** Each of these completes with `null`:
-  - a read of ISS in an empty cache directory;
-  - a read of ISS when the cache directory does not exist;
+  - a read of ISS in an empty cache directory; afterwards the cache directory still contains no item;
+  - a read of ISS when the cache directory does not exist; afterwards it still does not exist;
   - a read of ISS by a cache created with the path of an existing file inside the temporary directory; afterwards that file holds exactly the bytes it held before;
   - a read of ISS when only the cache file of Tiangong exists;
   - a read of ISS, by the same cache that wrote, after a write of the success of position 1 at T1 and the deletion of the cache file of ISS;
@@ -195,9 +207,11 @@ A cache file that does not hold a valid stored document for its object is read a
   - the text `null`;
   - the valid document of position 1 with its last character removed (a truncated write);
   - the bytes `FF FE 00`, which are not UTF-8.
+- **Longer than the size limit:** the valid document of position 1 followed by spaces (U+0020), so that the file is exactly 65537 bytes long. It would decode to a valid document; only its length makes it no entry.
 - **Wrong schema version:** the valid document of position 1 with `schemaVersion` set to `2`; again set to the string `"1"`; and again set to `1.0`, which is not a JSON integer.
 - **Missing member:** for each of the six members, the valid document of position 1 without that member.
-- **Wrong type:** the valid document of position 1 with `noradId` set to the `noradId` of ISS as a string; again with `noradId` set to the `noradId` of ISS followed by `.0`, which is not a JSON integer; and again with `nameLine` set to the number `1`.
+- **Null member:** for each of the six members, the valid document of position 1 with that member set to `null`.
+- **Wrong type:** the valid document of position 1 with `noradId` set to the `noradId` of ISS as a string; again with `noradId` set to the `noradId` of ISS followed by `.0`, which is not a JSON integer; again with `nameLine` set to the number `1`; again with `line1` set to the number `1`; and again with `line2` set to `true`. With the missing and null members, every member is tried with a value that is not of its type, so a cast that would throw a `TypeError`, which is not caught, fails a case.
 - **Invalid name line:** the valid document of position 1 with `nameLine` set to the empty string, and again with three spaces appended to `nameLine`.
 - **Another object:**
   - the valid document of position 2, which is consistent but belongs to Tiangong;
@@ -211,7 +225,7 @@ In addition, when a directory exists at the path of the cache file of ISS, a rea
 
 ### REQ-DAT-003.5 — Placement, public surface, boundaries and documented contract
 
-The cache lives in the data layer, exposes only the cache and its entry, reaches the disk only asynchronously, flushes before it renames, never looks up its directory, never reads a clock, never deletes or lists files, never catches a Dart `Error`, and documents its contract in fixed lines.
+The cache lives in the data layer, exposes only the cache and its entry, reaches the disk only asynchronously, never reads a whole file, flushes before it renames, never looks up its directory, never reads a clock, never deletes or lists files, never catches a Dart `Error`, and documents its contract in fixed lines.
 
 **Acceptance (verified by the guard test file):**
 
@@ -231,6 +245,7 @@ The cache lives in the data layer, exposes only the cache and its entry, reaches
 
   So the file declares no public function, constant, variable, enum, typedef, extension or mixin, and no second cache.
 - **Asynchronous only.** The cache library file does not contain the substring `Sync(`.
+- **No whole-file read.** The cache library file contains none of `readAsString`, `readAsBytes`, `readAsLines` and `openRead`. So a read opens the file and reads a bounded number of bytes, and the size limit cannot be bypassed by a read that loads the whole file first.
 - **Flushed before the rename.** The cache library file contains `flush: true` or `.flush(`.
 - **No directory lookup.** The cache library file contains neither `path_provider` nor `getApplication`.
 - **No clock.** The cache library file contains none of `DateTime.now`, `DateTime.timestamp` and `Stopwatch`.
@@ -238,9 +253,9 @@ The cache lives in the data layer, exposes only the cache and its entry, reaches
 - **No Dart `Error` caught.**
   - Every catch line, with leading blank characters removed, starts with one of the allowed catch prefixes, and contains ` on ` exactly once.
   - The cache library file contains none of `on Object`, `on Error` and `on dynamic`, in code or in comments.
-  - The cache library file contains none of `catchError`, `onError` and `runZoned`.
+  - The cache library file contains none of `catchError`, `onError`, `handleError`, `handleUncaughtError`, `runZoned`, `Zone.` and `ZoneSpecification`.
 
-  So every catch clause handles only `FileSystemException` or `FormatException`, none of which is a Dart `Error`, no `on TypeError`, `on StateError` or other `Error` subtype can pass, and no error callback or zone handler catches what a catch clause may not.
+  So every catch clause handles only `FileSystemException` or `FormatException`, none of which is a Dart `Error`, no `on TypeError`, `on StateError` or other `Error` subtype can pass, and no error callback of a future or a stream, and no zone handler, catches what a catch clause may not. An isolate error listener needs `dart:isolate`, which the import rule already excludes.
 - **Member names.** For each of `schemaVersion`, `noradId`, `nameLine`, `line1`, `line2` and `fetchedAtUtc`, at least one code line of the cache library file contains that name between single quotes.
 - **No catalog number.** The cache library file contains none of the substrings `25544`, `48274`, `38011` or `60133` (req-dat-001, one source of truth; also checked by the guard of req-dat-001).
 - **Doc lines.** The cache library file contains a line that matches each of:
@@ -250,6 +265,7 @@ The cache lives in the data layer, exposes only the cache and its entry, reaches
   - `/// Reads validate the document again with OrbitalElements.fromTle and the requested catalog number; anything else is no entry, never an error.`
   - `/// Asynchronous file access only, never on the frame path (Constitution principle 13); deleting any cache file or the directory is harmless (Constitution principle 11).`
   - `/// The directory is injected and resolved by req-dat-004; this file never looks it up.`
+  - `/// A cache file longer than 65536 bytes is no entry; a read never loads more than 65537 bytes of it, and a write never stores a longer document.`
 
 ### REQ-DAT-003.6 — Test hygiene
 
@@ -270,10 +286,16 @@ The new test files follow the hygiene rules of req-dat-002, and the unit test fi
   - No line of the unit test file, with leading blank characters removed, starts with `export`.
 
   So the unit test file uses neither `path_provider`, nor `package:http`, nor the core directly.
-- **Temporary directories only.** The unit test file contains the substring `createTemp(`, and at least one of `tearDown(` and `addTearDown(`. It does not contain `Directory.current`. That no test writes into the repository is also checked by V13.
+- **Temporary directories only.**
+  - The unit test file contains the substring `createTemp(`, and at least one of `tearDown(` and `addTearDown(`.
+  - Every occurrence of `systemTemp` in the unit test file is directly followed by `.createTemp(`.
+  - The unit test file contains none of `Directory.current`, `Platform.`, `.parent`, `'/` and `"/`.
+
+  So every path of a test starts from a directory returned by `createTemp(`: the file names no working directory, no environment variable, no parent of a temporary directory and no absolute path literal. That no test writes into the repository, not even into an ignored path, is also checked by V13.
 - **Unit test citation.** The unit test file contains a line that matches `// Payloads rebuilt from the CelesTrak snapshot of specs/req-dat-001.md; every test writes only inside a temporary directory it creates and deletes (Constitution principle 11).`
 - **Tags.**
-  - For each N from 1 to 4, the unit test file contains a line that matches `// REQ-DAT-003.N`. Let L be the next non-empty line after it, with leading blank characters removed. L starts with `group('REQ-DAT-003.N ` or `test('REQ-DAT-003.N `. Alternatively, L is equal to `group(` or `test(`, and the next line after L, with leading blank characters removed, starts with `'REQ-DAT-003.N `. Either way, every failing unit test names its requirement.
+  - For each N from 1 to 4, the unit test file contains a line that matches `// REQ-DAT-003.N`. Let L be the next non-empty line after it, with leading blank characters removed. L starts with `group('REQ-DAT-003.N ` or `test('REQ-DAT-003.N `. Alternatively, L is equal to `group(` or `test(`, and the next line after L, with leading blank characters removed, starts with `'REQ-DAT-003.N `.
+  - Every line of the unit test file that, with leading blank characters removed, starts with `group(` or `test(` is tagged: for some N from 1 to 4, it starts with `group('REQ-DAT-003.N ` or `test('REQ-DAT-003.N `, or it is equal to `group(` or `test(` and the next line, with leading blank characters removed, starts with `'REQ-DAT-003.N `. So every group and every test of the unit test file names its requirement, also a test nested in a tagged group, and a failing unit test always carries its tag.
   - For each N from 5 to 7, the guard test file contains a line that matches `// REQ-DAT-003.N`. The next non-empty line after it, with leading blank characters removed, starts with `test(`.
   - The guard test file contains no line that matches `// REQ-DAT-003.1`, `// REQ-DAT-003.2`, `// REQ-DAT-003.3` or `// REQ-DAT-003.4`. It builds those tags and name prefixes by interpolation, never as literals, so that V6 prints only its own tags.
 - **Self-matching tokens.** The guard test file builds the tokens `Platform.script` and `skip:` by concatenation of shorter string literals, never as one literal, because it checks its own text for them.
@@ -324,13 +346,13 @@ All commands in this section run from a POSIX shell with GNU `sed`: Git Bash on 
 | V10 | `git diff --name-only <base>...HEAD \| LC_ALL=C sort \| paste -sd, -`, where `<base>` is the base of V10 below | standard output `lib/data/element_cache.dart,test/data/element_cache_test.dart,test/element_cache_guard_test.dart`; or, only when the pull request links the developer's approval of a spec diff, the same list with `specs/req-dat-003.md` appended | REQ-DAT-003.6 (only the files of this spec change) |
 | V11 | `grep -rlE "25544\|48274\|38011\|60133" lib packages/orbital_core/lib \| paste -sd, -` | standard output `lib/domain/satellite_catalog.dart` | req-dat-001 one source of truth still holds |
 | V12 | `grep -rl "path_provider" lib \| paste -sd, -` | empty standard output | REQ-DAT-003.5: no library file looks up the cache directory yet |
-| V13 | `flutter test --no-pub test/data/element_cache_test.dart > /dev/null && git status --porcelain` | exit 0 and empty standard output | REQ-DAT-003.6: no unit test writes into the repository |
+| V13 | `git status --porcelain --ignored > /tmp/v13_before && flutter test --no-pub test/data/element_cache_test.dart > /dev/null && git status --porcelain --ignored \| diff /tmp/v13_before -` | exit 0 and empty standard output | REQ-DAT-003.6: no unit test writes into the repository, ignored paths included |
 
 Inside the table, `\|` is a single pipe. The CI workflow of req-inf-002 runs V3 to V5 and V8 on every pull request.
 
 - `lib/data/.gitkeep` stays, so V10 lists no deletion.
 - In V12, `grep` exits with 1 when nothing matches; the expected result is the empty output, not the exit status. V12 holds until req-dat-004, which resolves the directory with `path_provider` in another library file.
-- V13 runs after every file of the implementation is committed, like the negative checks below; with uncommitted work it proves nothing and counts as not run.
+- V13 runs after every file of the implementation is committed, like the negative checks below, and after V1, so the files that `flutter test` itself creates already exist; `git status --porcelain` must print nothing before it, and with uncommitted work V13 proves nothing and counts as not run. V13 compares the untracked and ignored paths before and after the unit tests, so a new file in an ignored path is seen too. An ignored directory that already exists is listed as one line, so a file written inside it is not seen; the rules "Temporary directories only" of REQ-DAT-003.6 cover that case, and no command can see a write outside the repository.
 - V1 and rows M2 and M17 below also run on a machine whose UTC offset at L1 is not zero, such as `-03:00` in Chile, and the pull request checklist records that offset. On a machine at offset zero, such as the CI runner, L1 and T1 denote the same moment, so the L1 case cannot tell a local instant from a UTC one; a run of these rows at offset zero counts as not run.
 
 **Base of V10.** V10 compares against the commit that brought this spec into `main`, not against `origin/main`. On the first run, after `git fetch origin main`, find it with `git log --first-parent --format=%H -1 origin/main -- specs/req-dat-003.md`, and record that hash in the pull request checklist. With `--first-parent`, the command finds that commit whichever way the spec reached `main`: a merge commit, a squashed or rebased pull request, or a direct push. Every later run uses the recorded hash, so a later commit that touches the spec cannot move the base. If the command prints nothing, V10 counts as not run, never as a pass or a failure.
@@ -386,10 +408,15 @@ For each row, apply the edit, run the command and confirm that it prints at leas
 | M19 | Remove the check that `line1` and `line2` do not end with a blank character on a read | `REQ-DAT-003.4` |
 | M20 | Create the temporary file exclusively, so that a write fails when the temporary file already exists | `REQ-DAT-003.1` |
 | M21 | Create the cache directory at the start of a read, without catching the exception of that creation | `REQ-DAT-003.3` |
+| M22 | Cast the values of `line1` and `line2` to `String` instead of testing their type | `REQ-DAT-003.4` |
+| M23 | Create the cache directory at the start of a read, catching the exception of that creation | `REQ-DAT-003.3` |
+| M24 | Remove the size check of a read, so that a file longer than the size limit is decoded | `REQ-DAT-003.4` |
+| M25 | Reject a cache file of exactly the size limit on a read | `REQ-DAT-003.3` |
+| M26 | Remove the size check of a write | `REQ-DAT-003.2` |
 
 - In rows U1 to U5 the unit test file still compiles, because only the cache file changes, and only in string literals and comments. If a U row changes nothing in the cache file, it counts as not run.
-- M6, M7 and M19 may share a validation with the write. If they do, the mutant also changes the write, and the row still reads only its own tag.
-- M13 assumes that some case of REQ-DAT-003.4 makes the read raise a `FileSystemException`, such as the directory at the path of the cache file or the bytes that are not UTF-8. If the implementation avoids every such exception, for example by checking the file first and decoding the bytes itself, M13 counts as not run, and the reviewer reads the read path instead.
+- M6, M7, M19, M24 and M26 may share a validation or a size check with the other direction. If they do, the mutant also changes that direction, and the row still reads only its own tag.
+- M13 assumes that some case of REQ-DAT-003.4 makes the read raise a `FileSystemException`, such as the directory at the path of the cache file. Because a read decodes the bytes itself (REQ-DAT-003.5, no whole-file read), the bytes that are not UTF-8 raise a `FormatException` instead. If the implementation avoids every `FileSystemException`, for example by checking the file first, M13 counts as not run, and the reviewer reads the read path instead.
 
 **Guard rows (G).** The command is:
 
@@ -467,10 +494,33 @@ The edits are defined as in `specs/req-orb-010.md` (Local negative checks). "The
 | G64 | Append the line `// DateTime.timestamp()` to the cache file | `[REQ-DAT-003.5]` |
 | G65 | Append the line `// Stopwatch()` to the cache file | `[REQ-DAT-003.5]` |
 | G66 | Replace every occurrence of `Qualified by req-dat-003` with `Qualified` in the ADR file | `[REQ-DAT-003.7]` |
+| G67 | Append the line `// stream.handleError(print);` to the cache file | `[REQ-DAT-003.5]` |
+| G68 | Append the line `// Zone.current.fork();` to the cache file | `[REQ-DAT-003.5]` |
+| G69 | Append the line `// ZoneSpecification()` to the cache file | `[REQ-DAT-003.5]` |
+| G70 | Append the line `// handleUncaughtError: handler` to the cache file | `[REQ-DAT-003.5]` |
+| G71 | Append the line `void _swallow() { try {} on StateError {} }` to the cache file | `[REQ-DAT-003.5]` |
+| G72 | Append the line `extension _Swallow on TrackedObject { void f() { try {} on StateError {} } }` to the cache file | `[REQ-DAT-003.5]` |
+| G73 | Append the line `_CacheDocument? parseDocument(String text) => null;` to the cache file | `[REQ-DAT-003.5]` |
+| G74 | Append the line `final _CacheDocument? lastDocument = null;` to the cache file | `[REQ-DAT-003.5]` |
+| G75 | Add `part 'element_cache.g.dart';` as the first line of the cache file | `[REQ-DAT-003.5]` |
+| G76 | Delete the line `import 'dart:convert';` from the cache file | `[REQ-DAT-003.5]` |
+| G77 | By hand, like an M row: prefix the name of the entry type with `_` in its declaration line only, and show the diff in the pull request | `[REQ-DAT-003.5]` |
+| G78 | Append the line `// file.readAsString()` to the cache file | `[REQ-DAT-003.5]` |
+| G79 | Append the line `// file.readAsBytes()` to the cache file | `[REQ-DAT-003.5]` |
+| G80 | Append the line `// file.readAsLines()` to the cache file | `[REQ-DAT-003.5]` |
+| G81 | Append the line `// file.openRead()` to the cache file | `[REQ-DAT-003.5]` |
+| G82 | Delete the line `/// A cache file longer than 65536 bytes is no entry; a read never loads more than 65537 bytes of it, and a write never stores a longer document.` from the cache file | `[REQ-DAT-003.5]` |
+| G83 | Add `export 'package:wintek/data/element_cache.dart';` as the first line of the unit test file | `[REQ-DAT-003.6]` |
+| G84 | Append the line `test('untagged', () {});` to the unit test file | `[REQ-DAT-003.6]` |
+| G85 | Append the line `// Directory.systemTemp.path` to the unit test file | `[REQ-DAT-003.6]` |
+| G86 | Append the line `// Platform.environment` to the unit test file | `[REQ-DAT-003.6]` |
+| G87 | Append the line `// tempDir.parent` to the unit test file | `[REQ-DAT-003.6]` |
+| G88 | Append the line `// File('/gp_25544.json')` to the unit test file | `[REQ-DAT-003.6]` |
+| G89 | Append the line `// File("/gp_25544.json")` to the unit test file | `[REQ-DAT-003.6]` |
 
 Inside the table, `\|` is a single pipe.
 
-- In G2 to G8, G14, G21, G33 to G37 and G61 to G63 a file may no longer compile or analyze cleanly. That does not affect the guard, which reads text and runs on its own.
+- In G2 to G8, G14, G21, G33 to G37, G61 to G63, G71 to G77, G83 and G84 a file may no longer compile or analyze cleanly. That does not affect the guard, which reads text and runs on its own.
 - In G47 the guard test file still compiles: an unused import is a warning, not an error.
 - G31 also removes the GP client file, and G32 removes every application library file, so the guards of req-dat-001 and req-dat-002 fail too; only the tag of this spec is read here.
 - G55 also fails the guards of req-dat-001 and req-dat-002; only the tag of this spec is read here.
@@ -478,13 +528,15 @@ Inside the table, `\|` is a single pipe.
 
 No row removes `import 'support/repo_root.dart';` from the guard test file. That edit stops the file from compiling, so V2 fails without printing any tag; the import line check is kept as a second line of defence.
 
-**Pull request checklist.** The description of the pull request that implements this spec lists V0–V13, with the base hash of V10 and the UTC offset of the machine that ran V1, M2 and M17, U1–U5, M1–M21 with their diffs, G0 and G1–G66, each with its observed result. A pull request without this list is incomplete regardless of its check status. This checklist is the one manual step of this spec: a reviewer reads it, and no command verifies it.
+**Pull request checklist.** The description of the pull request that implements this spec lists V0–V13, with the base hash of V10 and the UTC offset of the machine that ran V1, M2 and M17, U1–U5, M1–M26 with their diffs, G0 and G1–G89, with the diff of G77, each with its observed result. A pull request without this list is incomplete regardless of its check status. This checklist is the one manual step of this spec: a reviewer reads it, and no command verifies it.
+
+**Record of progress.** The checklist is also the record of progress of the implementation that AGENTS.md asks for ("mark its progress"): the implementation changes neither the spec file, except as V10 allows, nor `docs/roadmap.md`. The roadmap checkbox of this row is set by the QA workflow, outside the implementation.
 
 ## Edge Cases & Errors
 
 These cases are normative where a requirement above tests them, and informative where marked.
 
-- **First start, no cache.** The cache directory, or the cache file of an object, does not exist yet. A read reports no entry (REQ-DAT-003.3); req-dat-004 then has nothing to propagate for that object until its first fetch succeeds.
+- **First start, no cache.** The cache directory, or the cache file of an object, does not exist yet. A read reports no entry and creates nothing, so the directory first appears at the first write (REQ-DAT-003.3); req-dat-004 then has nothing to propagate for that object until its first fetch succeeds.
 - **The cache deleted by hand or by the user.** Deleting a cache file or the whole cache directory, while the app runs or between runs, is read as no entry, and the next write creates the directory and the file again (REQ-DAT-003.3, Constitution principle 11).
 - **An interrupted write.** The app is killed between the write of the temporary file and the rename. The cache file still holds the previous document, or does not exist; a read is unaffected. The temporary file may remain, and the next write of that object replaces it and completes with `true` (REQ-DAT-003.1, leftover temporary file).
 - **A power loss after the rename (informative).** The temporary file is flushed before the rename, but the directory entry is not, and some file systems may keep the rename without the data. The cache file is then empty or damaged: a read reports no entry, the previous document is lost, and the next successful write of that object repairs the file. The cache keeps no second copy against this.
@@ -496,7 +548,11 @@ These cases are normative where a requirement above tests them, and informative 
 - **The cache directory is a file.** A write completes with `false` (REQ-DAT-003.2), and a read reports no entry and leaves the file unchanged (REQ-DAT-003.3).
 - **A file of another object.** A cache file that holds a document of another object, or a document whose `noradId` member or element lines belong to another object, fails the catalog-number rules and is read as no entry, so an element set is never filed under the wrong object (REQ-DAT-003.4).
 - **A document from another version of the app.** A schema version other than the JSON integer `1` is read as no entry (REQ-DAT-003.4). A later spec that changes the document raises the version in a revision of this spec, and decides then whether to read version `1` too.
+- **A file of any length.** A read loads at most the size limit plus one byte, so a cache file padded or filled to any length, even larger than the memory of the device, is read as no entry without loading it (REQ-DAT-003.4), and a file of exactly the size limit is still read (REQ-DAT-003.3). A success whose document would be longer is not written (REQ-DAT-003.2). A document of the GP client takes a few hundred bytes, so the limit never refuses a real one.
 - **Extra members.** A member that this spec does not define is ignored on read (REQ-DAT-003.3). A write never adds one.
+- **Null and mistyped members.** A member set to `null`, or to a value of another JSON type, is read as no entry like a missing member (REQ-DAT-003.4), and never as a `TypeError` of a cast, which would not be caught.
+- **Duplicate members (informative).** JSON text can repeat a member name. `jsonDecode` keeps the last value of each name, and the validation applies to that value; this spec neither detects nor rejects the repetition. A write never repeats a member.
+- **An older element set replaces a newer one (informative).** Every write of a valid success replaces the stored document of its object, even when its arrival instant, or the epoch of its element lines, is earlier than the stored one, for example after the device clock was moved back. The cache does not compare documents; whether a write is worth making is req-dat-004's decision.
 - **An arrival instant in local time.** A `fetchedAtUtc` without the final `Z`, or with a numeric offset, is read as no entry (REQ-DAT-003.4).
 - **An arrival instant in the future (informative).** A device clock that was wrong at download time can store an instant after the current one. The cache stores and returns it unchanged; how such an age is shown is req-dat-004's decision.
 - **Microseconds.** The arrival instant keeps its full precision across a write and a read (REQ-DAT-003.3).
@@ -523,7 +579,8 @@ Nothing below is written in the implementation:
 - Reading schema versions other than `1`.
 - Parsing the stored lines into the elements that a propagator uses, beyond the validation of a write and a read (req-dat-004, req-sta-001).
 - Storing user settings, the user's location or anything other than the documents of this spec (Constitution principle 11; ADR-0001, note of REQ-DAT-003.7).
-- Any compression, encryption, checksum of the file or size limit.
+- Any compression, encryption or checksum of the file, and any size limit other than the one of Definitions.
+- Detecting or rejecting duplicate members of a document, and comparing a new document with the stored one.
 - Any domain repository interface, Riverpod provider, widget or screen, and any change to `lib/main.dart` (req-dat-004, req-sta-001, req-ui-*).
 - Any change to `lib/data/celestrak_gp_client.dart`, `lib/domain/satellite_catalog.dart`, the snapshot data file or the tests and guards of req-dat-001 and req-dat-002.
 - Any change to `packages/orbital_core`, its tests or its guards.
