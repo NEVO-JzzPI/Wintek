@@ -18,7 +18,7 @@ Strict build order: every row is one future `specs/<id>.md` and one pull request
 [X]| req-orb-010 | SGP4 adapter behind the interface | Wrap the library chosen in ADR-0002 and validate it against the official test vectors, delivering the realistic propagation the MVP renders. |
 [X]| req-dat-001 | Satellite catalog | Fix the four tracked objects and their NORAD IDs as domain constants, closing the open GOES-East question before any request is written. |
 [X]| req-dat-002 | CelesTrak GP client | Fetch OMM/TLE data with one request per dataset and typed failures, the app's only network boundary. |
-[ ]| req-dat-003 | Local element cache | Persist the last good payload with its fetch timestamp under app storage, so a cold start needs no network and a deleted cache is harmless. |
+[X]| req-dat-003 | Local element cache | Persist the last good payload with its fetch timestamp under app storage, so a cold start needs no network and a deleted cache is harmless. |
 | req-dat-004 | Element repository and refresh policy | Resolve the cache directory as the application support directory of `path_provider` and implement the domain interface that serves the cache, refreshes only past the age threshold and exposes data age — what makes offline a feature instead of an error. |
 | req-tim-001 | Simulation clock | Advance a single UTC clock with a `Ticker`, the one time source every propagation reads. |
 | req-tim-002 | Time controls | Add pause, ×10, ×100, reverse and back-to-now as a multiplier over that clock, with no change to any propagator. |
