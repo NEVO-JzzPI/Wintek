@@ -1,6 +1,6 @@
 # req-dat-003 — Local element cache
 
-- **Status:** Draft (revision 7), after the sixth QA audit, pending a seventh audit. The first audit was made by the author of the spec, and the second to sixth by sessions that did not draft the revision they audited. Revision 7 was drafted by the session that made the sixth audit, so the seventh should be made by a session that did not draft revision 7.
+- **Status:** Draft (revision 8), after the seventh QA audit, pending an eighth audit. The first audit was made by the author of the spec, and the second to seventh by sessions that did not draft the revision they audited. Revision 8 was drafted by the session that made the seventh audit, so the eighth should be made by a session that did not draft revision 8.
   - **Approved before drafting (2026-11-14):**
     - one cache file per tracked object, named from its `noradId`, so a damaged file costs one object and never four;
     - the cache directory is injected; req-dat-004 resolves it as the application support directory of `path_provider`, which the operating system does not clear on its own, so the offline feature of Constitution principle 9 does not vanish unannounced;
@@ -39,6 +39,7 @@
     - Fifth audit, fixed in the text: 3 (the edge case "A short read").
     - Fifth audit, accepted without change: 1 (the reviewer reads the function that holds the one `.read(` call).
     - Sixth audit: 1 (closed by this revision), 2 (closed by finding 2 of the fifth audit: the value of `fetchedAtUtc` is now one string), 3 (class modifiers and the `library` directive are named in Definitions), 4 (the pull request, not one commit, brings the note of REQ-DAT-003.7), 6 (strict UTF-8 on a read: a case of REQ-DAT-003.4 and M32), 7 (G99 to G115, one row per item of a guard rule), 8 (the edge case "A read and a write of the same object"). No finding: 5, 9 and 10.
+  - **Approved for revision 8 (2026-11-14):** the critical finding of the seventh QA audit, fixed in the local checks: 4.1 (G21 replaces only `flush: true` and `.flush(`, so the doc line that contains "is flushed" still matches and the row proves the rule "Flushed before the rename"). The other findings of the seventh audit are pending the developer's decision.
   - **Beyond roadmap row 15:** the dated note in ADR-0001 and its mention in the Status line (REQ-DAT-003.7), and the wording of roadmap row 16. Otherwise nothing: the roadmap row asks for "the last good payload with its fetch timestamp under app storage"; req-dat-002 produces that timestamp, and this spec stores it.
 - **Roadmap row:** 15 of 33 (MVP)
 - **Blocks:**
@@ -490,7 +491,7 @@ The edits are defined as in `specs/req-orb-010.md` (Local negative checks). "The
 | G18 | Append the line `// future.catchError((_) => null);` to the cache file | `[REQ-DAT-003.5]` |
 | G19 | Append the line `// stream.listen(print, onError: print);` to the cache file | `[REQ-DAT-003.5]` |
 | G20 | Append the line `// runZonedGuarded(body, handler);` to the cache file | `[REQ-DAT-003.5]` |
-| G21 | Replace every occurrence of `flush` with `fsync` in the cache file | `[REQ-DAT-003.5]` |
+| G21 | Replace every occurrence of `flush: true` with `fsync: true`, and every occurrence of `.flush(` with `.fsync(`, in the cache file | `[REQ-DAT-003.5]` |
 | G22 | Replace every occurrence of `'fetchedAtUtc'` with `"fetchedAtUtc"` in the cache file | `[REQ-DAT-003.5]` |
 | G23 | Replace every occurrence of `'noradId'` with `"noradId"` in the cache file | `[REQ-DAT-003.5]` |
 | G24 | Append the line `// ISS is 25544.` to the cache file | `[REQ-DAT-003.5]` |
@@ -591,6 +592,7 @@ The edits are defined as in `specs/req-orb-010.md` (Local negative checks). "The
 Inside the table, `\|` is a single pipe.
 
 - In G2 to G8, G14, G21, G33 to G37, G61 to G63, G71 to G77, G83, G84 and G111 to G117 a file may no longer compile or analyze cleanly.
+- G21 replaces only the two tokens of the rule "Flushed before the rename", never the word `flush` alone: the doc line of `gp_NORADID.json` contains "is flushed", so a wider replacement would also fail the doc-line rule and the row would print the tag even with no flush check in the guard.
 - G106 isolates the `path_provider` text of the rule "No directory lookup": G3 also fails the import rule, so it cannot show that the text check exists. In G107 to G110 every file still compiles or reads as before; only its first bytes change. G110 is expected to report `[REQ-DAT-003.6]`; the lines of REQ-DAT-003.7 are not the first line of the ADR file, so they still match. That does not affect the guard, which reads text and runs on its own.
 - In G47 the guard test file still compiles: an unused import is a warning, not an error.
 - G31 also removes the GP client file, and G32 removes every application library file, so the guards of req-dat-001 and req-dat-002 fail too; only the tag of this spec is read here.
@@ -669,4 +671,4 @@ Nothing below is written in the implementation:
 
 ## Open Questions
 
-None. The pending findings of the fifth QA audit and the findings of the sixth have a disposition in the Status line (approved for revision 7).
+- The non-critical findings of the seventh QA audit (1.1 to 1.4, 2.1 to 2.3, 3.2, 4.2, 5.1 to 5.5 and 6.2) await the developer's disposition. The findings of the earlier audits have a disposition in the Status line.
