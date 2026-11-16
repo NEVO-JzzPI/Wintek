@@ -21,7 +21,7 @@
 - **Roadmap row:** 14 of 33 (MVP)
 - **Blocks:**
   - req-dat-003: persists the payload and the arrival instant of a success;
-  - req-dat-004: decides when to call the client, creates and owns its HTTP client, and maps its failures to the data age and the stale-data warning. Creating the HTTP client outside the client library file needs an amendment of REQ-DAT-002.4 in that spec.
+  - req-dat-004: decides when to call the client, creates and owns its HTTP client, and records each failure as the outcome failed while it keeps serving the element set it had; the data age and the stale-data warning follow from the arrival instant, not from the failure (amended by req-dat-004 on 2026-11-16). Creating the HTTP client outside the client library file needs an amendment of REQ-DAT-002.4 in that spec.
 - **Depends on:**
   - req-dat-001: `TrackedObject`, its `noradId`, the GP request of an object and the snapshot data file `test/domain/celestrak_tle_snapshot.dart`;
   - req-orb-003: `OrbitalElements.fromTle`, its `catalogNumber` and the `FormatException` it throws;
