@@ -17,10 +17,11 @@
     - Fixed in the text: 2 (no "well within"), 8 (V10 order), 9 (data imports the core), 10 to 12 (extensions and roadmap wording above), 13 (no constraint on req-ui-005 in Blocks), 21 (importers of the client are out of scope).
     - Removed: V12 of revision 1 (findings 17 and 23). A release build proves nothing about the permission that the guard of REQ-DAT-002.5 does not already prove, and it needs an Android toolchain and network access to Gradle repositories.
     - Accepted as is: 3. The M rows stay hand-applied mutants, because killing them mechanically would fix class names in this spec.
+  - **Amended by req-dat-004 (2026-11-15):** REQ-DAT-002.4 lets exactly one more application library file, `lib/data/element_repository_factory.dart`, import `package:http/http.dart` to create and close the production HTTP client. The client library file stays the only file that uses `HttpClient`, a socket or an address lookup, or names the CelesTrak host.
 - **Roadmap row:** 14 of 33 (MVP)
 - **Blocks:**
   - req-dat-003: persists the payload and the arrival instant of a success;
-  - req-dat-004: decides when to call the client, creates and owns its HTTP client, and maps its failures to the data age and the stale-data warning. Creating the HTTP client outside the client library file needs an amendment of REQ-DAT-002.4 in that spec.
+  - req-dat-004: decides when to call the client, creates and owns its HTTP client, and records each failure as the outcome failed while it keeps serving the element set it had; the data age and the stale-data warning follow from the arrival instant, not from the failure (amended by req-dat-004 on 2026-11-16). Creating the HTTP client outside the client library file needs an amendment of REQ-DAT-002.4 in that spec.
 - **Depends on:**
   - req-dat-001: `TrackedObject`, its `noradId`, the GP request of an object and the snapshot data file `test/domain/celestrak_tle_snapshot.dart`;
   - req-orb-003: `OrbitalElements.fromTle`, its `catalogNumber` and the `FormatException` it throws;
@@ -52,7 +53,7 @@ Every later data spec needs fresh element sets, and every one of them must reach
 - **Data layer.** The client is an implementation detail of the data layer (Constitution principle 5). It imports the catalog of the domain layer and the core, never Flutter, Riverpod or `dart:io`. Principle 5 restricts what `domain` may depend on; it does not forbid `data` from using `orbital_core`, and ADR-0003 assigns the parsing of the downloaded lines to this layer.
 - **Small public surface.** The client library file declares exactly one public client type, which offers one fetch per tracked object and a readable timeout, and one sealed result type with one success and five failure types. Everything else in the file is private (REQ-DAT-002.4).
 - **Injected HTTP client, owned by its creator.** The client receives its HTTP client and never creates or closes one. Whoever creates the HTTP client owns it and closes it; in the app that is req-dat-004. Tests inject the mock client of `package:http/testing.dart`, so the tests cannot reach the network.
-- **The only network boundary.** No other application library file imports `package:http`, uses `HttpClient`, a socket or an address lookup, or names the CelesTrak host (REQ-DAT-002.4). A later spec that needs one of these in another library file amends this rule in a revision of this spec.
+- **The only network boundary.** No other application library file imports `package:http`, uses `HttpClient`, a socket or an address lookup, or names the CelesTrak host (REQ-DAT-002.4). A later spec that needs one of these in another library file amends this rule in a revision of this spec. Amended by req-dat-004 (2026-11-15): the factory library file of req-dat-004 also imports `package:http/http.dart`, only to create and close the production HTTP client.
 - **Stores nothing.** The client writes no file and keeps no state (Constitution principle 11). Persistence is req-dat-003.
 - **Off the frame path.** The client is asynchronous and is never called from a painter or a per-frame provider (Constitution principle 13). Wiring it to providers is req-dat-004 and req-sta-001.
 - **No network in tests.** Every unit test answers through the mock client (Constitution principle 10). No test of this spec, and no command of its checklist, sends a request to CelesTrak.
@@ -164,9 +165,13 @@ The client lives in the data layer, exposes only the client and its result types
   - Exactly one of them starts with `sealed class `.
 
   So the file declares no public function, constant, variable, enum, typedef, extension or mixin, and no second client.
-- **The only network boundary.**
-  - No application library file other than the client library file contains any of the substrings `package:http/`, `HttpClient`, `Socket` or `InternetAddress`.
+- **The only network boundary** (amended by req-dat-004 on 2026-11-15).
+  - No application library file other than the client library file and the factory library file of req-dat-004, `lib/data/element_repository_factory.dart`, contains the substring `package:http/`.
+  - In the factory library file of req-dat-004, every line that contains `package:http/` is a line that, with leading blank characters removed, starts with `import ` and whose import URI is `package:http/http.dart`.
+  - No application library file other than the client library file contains any of the substrings `HttpClient`, `Socket` or `InternetAddress`.
   - No application library file other than the client library file contains `celestrak.org`, compared without regard to letter case.
+
+  So the factory of req-dat-004 can create and close the production HTTP client, and every request still goes through the client.
 - **No timer.** The client library file contains neither the substring `Timer` nor the substring `periodic`.
 - **HTTP client injected, never created or closed.** The client library file does not contain the substring `.close(`, and every occurrence of `Client(` in it is directly preceded by an ASCII letter. So it never constructs `Client()` of `package:http`, with or without a prefix, while the name of its own client type may end in `Client`.
 - **User-Agent.** At least one code line of the client library file contains the User-Agent value between single quotes.
@@ -253,6 +258,8 @@ All commands in this section run from a POSIX shell with GNU `sed`: Git Bash on 
 | V11 | `grep -rlE "25544\|48274\|38011\|60133" lib packages/orbital_core/lib \| paste -sd, -` | standard output `lib/domain/satellite_catalog.dart` | req-dat-001 one source of truth still holds |
 
 Inside the table, `\|` is a single pipe. The CI workflow of req-inf-002 runs V3 to V5 and V8 on every pull request. `lib/data/.gitkeep` stays, so V10 lists no deletion. V9 uses `grep -rli` with an escaped dot rather than `grep -rliF`: on the developer's Git Bash, `grep` aborts when `-i` and `-F` are combined.
+
+Amended by req-dat-004 (2026-11-15): from the implementation of req-dat-004 on, V9 prints `lib/data/celestrak_gp_client.dart,lib/data/element_repository_factory.dart`, because the factory library file imports `package:http/http.dart`. V9 and V11 of `specs/req-dat-004.md` check each half of the amended rule.
 
 **Precondition of V10.** The implementation branch is created from `main` after the pull request of this spec was merged into `main` with a merge commit. If the branch was created before that merge, or the spec pull request was squashed, the spec file appears in the diff. V10 then counts as not run, never as a pass or a failure, and the fix is to rebase the implementation branch onto `main`.
 
