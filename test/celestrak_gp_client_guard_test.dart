@@ -12,6 +12,7 @@ import 'support/repo_root.dart';
 
 const String _specPath = 'specs/req-dat-002.md';
 const String _clientPath = 'lib/data/celestrak_gp_client.dart';
+const String _factoryPath = 'lib/data/element_repository_factory.dart';
 const String _unitTestPath = 'test/data/celestrak_gp_client_test.dart';
 const String _guardTestPath = 'test/celestrak_gp_client_guard_test.dart';
 const String _snapshotPath = 'test/domain/celestrak_tle_snapshot.dart';
@@ -356,12 +357,22 @@ void _checkNetworkBoundary(Directory root, List<String> problems) {
     final path = _normalize(file.path);
     if (path.endsWith('/$_clientPath')) continue;
     final text = file.readAsStringSync();
-    for (final token in const [
-      'package:http/',
-      'HttpClient',
-      'Socket',
-      'InternetAddress',
-    ]) {
+    if (path.endsWith('/$_factoryPath')) {
+      for (final line in text.split('\n')) {
+        if (line.contains('package:http/') &&
+            (!line.trimLeft().startsWith('import ') ||
+                _importUri(line) != 'package:http/http.dart')) {
+          problems.add(
+            '$path has the line "${line.trim()}", but only an import of package:http/http.dart may name package:http/ there.',
+          );
+        }
+      }
+    } else if (text.contains('package:http/')) {
+      problems.add(
+        '$path contains "package:http/", which only $_clientPath and $_factoryPath may.',
+      );
+    }
+    for (final token in const ['HttpClient', 'Socket', 'InternetAddress']) {
       if (text.contains(token)) {
         problems.add('$path contains "$token", which only $_clientPath may.');
       }
