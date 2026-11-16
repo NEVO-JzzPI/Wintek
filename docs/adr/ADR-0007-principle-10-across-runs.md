@@ -1,6 +1,6 @@
 # ADR-0007 — Reading of Constitution principle 10 across runs of the app
 
-- **Status:** Proposed (2026-11-16), with revision 3 of `specs/req-dat-004.md`. The developer accepts it before that spec merges into `main`; the guard of req-dat-004 then requires this line to start with `- **Status:** Accepted`.
+- **Status:** Accepted (2026-11-16, by the developer, with revision 6 of `specs/req-dat-004.md`, before it was implemented). Proposed with revision 3 of that spec; the guard of req-dat-004 requires this line to start with `- **Status:** Accepted`.
 - **Date:** 2026-11-16
 - **Relates to:** Constitution principles 10 (be a good CelesTrak citizen) and 11 (cached data is replaceable, not precious); `specs/req-dat-004.md`, REQ-DAT-004.1 to REQ-DAT-004.3; `specs/req-dat-002.md`, edge case "CelesTrak blocks the client"
 
