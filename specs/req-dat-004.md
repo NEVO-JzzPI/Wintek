@@ -1,6 +1,6 @@
 # req-dat-004 — Element repository and refresh policy
 
-- **Status:** Draft (revision 1), pending the first QA audit. The first audit should be made by a session that did not draft revision 1.
+- **Status:** Draft (revision 2), after the first QA audit, pending a second audit. The first audit was made by a session that did not draft revision 1. Revision 2 was drafted by the session that made the first audit, so the second should be made by a session that did not draft revision 2.
   - **Approved before drafting (2026-11-15):**
     - the refresh threshold is 6 hours, measured from the arrival instant that the GP client stamped and the cache stored; an element set exactly 6 hours old is due;
     - every attempt, successful or failed, opens a window of 6 hours for its object, kept in memory only; within that window no request is sent for that object, and a new start of the app begins with no window (Constitution principles 10 and 11);
@@ -16,10 +16,15 @@
     - a refresh asked for while another refresh runs joins it and completes with its outcomes, so no object is ever fetched or written twice at once (req-dat-003, edge case "Concurrent writes of the same object");
     - the layer rules that req-dat-001 and req-dat-002 left to this spec: every domain library file imports only the core and the domain layer, and no presentation library file imports the data layer, `package:http`, `path_provider` or `dart:io`;
     - doc lines fixed word for word, checked by the guard, as in the earlier specs of the data layer.
-  - **Beyond roadmap row 16:** the amendment of REQ-DAT-002.4 (REQ-DAT-004.9), which req-dat-002 assigned to this spec ("Creating the HTTP client outside the client library file needs an amendment of REQ-DAT-002.4 in that spec"), and the layer rules of REQ-DAT-004.8, which req-dat-001 and req-dat-002 assigned to this spec. Otherwise nothing.
+  - **Approved for revision 2 (2026-11-16):** all findings of the first QA audit, as follows.
+    - Fixed in requirements and tests: 1.1 (the application support directory on a code line, and no temporary or current directory in the factory; G89 to G92), 1.2 (the domain library file names no failure, status code or name line; G93 to G96), 2.1 (the case "The window of a failure" expects the other three objects to be requested again at N0 + H), 2.3 (no presentation library file imports `dart:convert`; G100), 3.2 (no application library file outside `lib/data`, other than `lib/main.dart`, imports the data layer; G98 and G99), 5.1 (a lookup never replaces an element set already in memory; a doc line and G97), 5.2 (the case "A timeout is failed" and M36).
+    - Fixed in the text: 1.3 and 1.4 (letting the event loop run and held answers are defined), 1.5 (the count of `Client(` and `Client.new` is one in total), 2.2 (the decision "The only source is CelesTrak"), 3.1 (the handle is listed beyond roadmap row 16), 5.3 (the declaration line of the repository fits on one line).
+    - Left to the reviewer, as stated in the text: 1.6 (the GP client guard test file changes only its network-boundary check) and the race of 5.1, which no test can produce deterministically.
+    - No change needed: 4.1, 5.4 and 6.1.
+  - **Beyond roadmap row 16:** the amendment of REQ-DAT-002.4 (REQ-DAT-004.9), which req-dat-002 assigned to this spec ("Creating the HTTP client outside the client library file needs an amendment of REQ-DAT-002.4 in that spec"); the handle that creates the production HTTP client and closes it once, which req-dat-002 also assigned to this spec ("whoever creates it owns it"); and the layer rules of REQ-DAT-004.8, which req-dat-001 and req-dat-002 assigned to this spec. Otherwise nothing.
 - **Roadmap row:** 16 of 33 (MVP)
 - **Blocks:**
-  - req-sta-001: opens the repository through the opener, keeps it for the lifetime of the app, closes it, decides when to ask for a refresh (for example at start and when the app returns to the foreground) and joins the served element sets with the simulation clock;
+  - req-sta-001: opens the repository through the opener in `lib/main.dart`, the only application library file outside `lib/data` that may import the data layer (REQ-DAT-004.8), keeps it for the lifetime of the app, closes it, decides when to ask for a refresh (for example at start and when the app returns to the foreground) and joins the served element sets with the simulation clock;
   - req-ui-003: shows the data age of the selected object, read from state that req-sta-001 derives from this contract;
   - req-ui-004: fixes the age limit of stale data and shows the warning, from the arrival instant and the data age of this contract.
 - **Depends on:**
@@ -64,8 +69,9 @@ The repository is deliberately passive. It sends a request only when it is asked
 
 ### Decisions that follow from the Constitution
 
-- **Dependencies point inward.** The domain library file imports only the core and the catalog (principle 5). The repository library file imports the domain, the GP client, the cache and the core, never Flutter, Riverpod, `dart:io`, `path_provider` or `package:http`. Only the factory library file imports `path_provider` and `package:http/http.dart`.
-- **The UI only renders.** No presentation library file imports the data layer, `package:http`, `path_provider` or `dart:io` (principle 4). The rule is checked now, while `lib/presentation` is still empty, so that the first widget already meets it.
+- **The only source is CelesTrak.** Principle 10 is read as: every element set served comes from a CelesTrak response, and the cache is the only thing that survives a restart. Memory holds only CelesTrak responses already received, so serving a success whose write failed, or one whose cache file was deleted, adds no source; the cache catches up at the next success.
+- **Dependencies point inward.** The domain library file imports only the core and the catalog (principle 5). The repository library file imports the domain, the GP client, the cache and the core, never Flutter, Riverpod, `dart:io`, `path_provider` or `package:http`. Only the factory library file imports `path_provider` and `package:http/http.dart`. No application library file outside `lib/data` imports the data layer, except `lib/main.dart`, the composition root, so a later directory such as `lib/state` cannot reach it either.
+- **The UI only renders.** No presentation library file imports the data layer, `package:http`, `path_provider`, `dart:io` or `dart:convert` (principle 4: no HTTP and no JSON parsing). The rule is checked now, while `lib/presentation` is still empty, so that the first widget already meets it.
 - **Never polling.** Nothing in the repository, the opener or the contract starts a timer, a periodic stream or a delayed future (principle 10). A refresh happens only when it is asked for.
 - **Off the frame path.** A lookup and a refresh are asynchronous; the contract is never called from a painter (principle 13). The data age is computed from values already in memory, for an instant that the caller passes, so no clock is read on the frame path.
 - **Offline is a feature.** With a cached element set and no network, a lookup serves the cached set, a refresh completes with failed for that object, and the arrival instant stays visible through the data age (principle 9).
@@ -78,6 +84,7 @@ These definitions are normative. Blank characters, application library files, li
 - **Application library files:** every file whose name ends in `.dart` under `lib`, searched recursively.
 - **Domain library files:** every file whose name ends in `.dart` under `lib/domain`, searched recursively.
 - **Presentation library files:** every file whose name ends in `.dart` under `lib/presentation`, searched recursively.
+- **Library files outside the data layer:** every application library file that is not under `lib/data` and is not `lib/main.dart`.
 - **Line match:** a line matches a string when, with leading and trailing blank characters removed, it is equal to the string character for character.
 - **Code line:** a line whose text, with leading blank characters removed, does not start with `//`.
 - **Import URI:** for a line whose text, with leading blank characters removed, starts with `import ` or `export `, the text between its first two single quotes.
@@ -102,7 +109,7 @@ These definitions are normative. Blank characters, application library files, li
 - **Directory resolver:** a function that completes with a directory. Its default is `getApplicationSupportDirectory` of `path_provider`.
 - **HTTP client creator:** a function that returns a new HTTP client of `package:http/http.dart`. Its default creates the production client of that package.
 - **Wall clock:** a function that returns the current instant. The open operation passes the same wall clock to the GP client and to the repository; when none is given, each uses its own default, the system clock.
-- **The names** of the contract, the served element set, the outcome, the repository, the handle and of all their members are the implementer's choice, within the public-surface rules of REQ-DAT-004.7.
+- **The names** of the contract, the served element set, the outcome, the repository, the handle and of all their members are the implementer's choice, within the public-surface rules of REQ-DAT-004.7. Those rules need the declaration line of the repository, with ` implements ` and the name of the contract, to fit on one line after `dart format`, so the two names together must be short enough for that.
 - **GP client, success, failure, cache, entry, cache file of an object, write and read:** as defined by `specs/req-dat-002.md` and `specs/req-dat-003.md`.
 - **Arrival instant:** of a success, the instant that the GP client stamped; of an entry, the instant that the cache read back; of a served element set, the arrival instant of the success or entry it was built from, in UTC.
 - **Refresh threshold:** 6 hours.
@@ -112,7 +119,7 @@ These definitions are normative. Blank characters, application library files, li
   - the arrival instant of its served element set is later than N.
 - **Attempt:** one fetch of the GP client for one object, made by a refresh. An attempt starts at the instant the repository reads from its wall clock when it decides that the object is due.
 - **Attempt window:** the window of an attempt started at A is open at instant N when A ≤ N and N < A + 6 hours.
-- **Lookup:** one call of the contract for one tracked object. It completes with the served element set of that object kept in memory, or else with a served element set built from the entry that the cache reads for it, which the repository then keeps in memory, or else with `null`. It never calls the GP client.
+- **Lookup:** one call of the contract for one tracked object. It completes with the served element set of that object kept in memory, or else with a served element set built from the entry that the cache reads for it, or else with `null`. It never calls the GP client. When its cache read completes, the repository keeps the served element set built from that entry in memory only if memory still holds no served element set of that object; otherwise the lookup completes with the one in memory. So a lookup never replaces an element set that a refresh kept while the read was running.
 - **Refresh:** one call of the contract with no argument. It completes with a map whose keys are exactly the four tracked objects and whose values are their outcomes. For each tracked object, in catalog order, it finds the served element set as a lookup does, reads the wall clock once, and:
   - when the object is not due, records not due and sends no request;
   - when the object is due, starts an attempt, awaits the fetch of the GP client, and then:
@@ -131,6 +138,8 @@ These definitions are normative. Blank characters, application library files, li
 - **Instants used by the tests:** N0 is 2026-01-15 12:00:00 UTC. N0 lies months before the drafting of this spec, so a repository that read the system clock instead of its injected wall clock would find every arrival instant of the tests far older than 6 hours, and the tests below would catch it. H is 6 hours, and 1 µs is one microsecond.
 - **Test clock:** a wall clock of a unit test that returns an instant the test sets and moves. The GP client and the repository of a test read the same test clock.
 - **Mock client:** a `MockClient` of `package:http/testing.dart`. The mock client of a test records the `CATNR` query parameter of every request it receives, in order, and answers it as the test states. "Success response of an object" is status 200 with the body made of the name token, line 1 and line 2 of its snapshot entry, each followed by an LF. "Requests" are the recorded catalog numbers.
+- **Let the event loop run once:** the test executes `await Future<void>.delayed(Duration.zero);`. Let it run ten times: the test executes that statement ten times in a row.
+- **Held answers:** a mock client that holds its answers awaits one `Completer<void>` of the test before it answers any request. "Releasing the answers" completes that completer; from then on every pending and every later request is answered at once, without holding.
 - **Cached at instant A:** for an object at position k, the state in which its cache file holds what a write of the success of position k at A (as defined by `specs/req-dat-003.md`) stores, written by a cache on the test's temporary directory before the repository of the test is created.
 
 ## Functional Requirements
@@ -179,10 +188,11 @@ A failed attempt keeps the element set already served, and no object is attempte
   - status 200 with the body `No GP data found`;
   - status 200 with the body `not a TLE`;
   - the mock client throws a `ClientException`.
+- **A timeout is failed.** The GP client of this case is created on the mock client with a timeout of 10 milliseconds and the test clock, and the mock client answers the requests for ISS with a future that never completes. With ISS cached at N0 − 7 hours and the other three cached at N0 − 1 hour, a refresh at N0 completes with failed for ISS and not due for the other three, the only request is the catalog number of ISS, a lookup of ISS then completes with arrival instant N0 − 7 hours, and the cache file of ISS holds exactly the bytes it held before the refresh.
 - **A failure without a cache.** In an empty cache directory, with the requests for ISS answered with status 500, a refresh at N0 completes with failed for ISS and refreshed for the other three, and a lookup of ISS then completes with `null`.
 - **The window of a failure.** In an empty cache directory, with the requests for ISS answered with status 500, a refresh at N0 completes with failed for ISS. Then the mock client answers every request with the success response of its object, and:
   - at N0 + H − 1 µs, a refresh completes with not due for ISS, and no new request for ISS is recorded;
-  - at N0 + H, a refresh completes with refreshed for ISS, and exactly one new request, the catalog number of ISS, is recorded.
+  - at N0 + H, a refresh completes with refreshed for all four, and the new requests are the four catalog numbers in catalog order, so exactly one new request for ISS is recorded; the other three, 6 hours old at N0 + H, are requested again too.
 - **One window per object.** With ISS cached at N0 − 7 hours and answered with status 500, Tiangong cached at N0 − 5 hours, and the other two cached at N0, a refresh at N0 completes with failed for ISS and not due for the other three. At N0 + 1 hour, where Tiangong is 6 hours old, a refresh completes with not due for ISS and refreshed for Tiangong, and the only new request is the catalog number of Tiangong.
 - **The window of a success.** In an empty cache directory, a refresh at N0 completes with refreshed for all four. At N0 + H − 1 µs a refresh completes with not due for all four and no new request is recorded; at N0 + H a refresh completes with refreshed for all four.
 - **The window is in memory only.** In an empty cache directory, with the requests for ISS answered with status 500, a refresh at N0 completes with failed for ISS. Afterwards the cache directory contains exactly the cache files of the other three objects and no other item. A second repository, created with a new GP client on the same mock client and a new cache on the same directory, then refreshes at N0 + 1 minute: its outcome for ISS is failed, and one new request, the catalog number of ISS, is recorded.
@@ -194,9 +204,9 @@ A refresh sends its requests one after the other, in catalog order, and a refres
 
 **Acceptance (verified by the repository unit test file).** The set-up is that of REQ-DAT-004.1, in an empty cache directory.
 
-- **In catalog order, one at a time.** The mock client counts the requests in flight: it adds one when a request arrives, lets the event loop run once before it answers, and subtracts one when it answers. A refresh at N0 completes with refreshed for all four; the requests are the four catalog numbers in catalog order, and at no time were two requests in flight.
+- **In catalog order, one at a time.** The mock client counts the requests in flight: it adds one when a request arrives, lets the event loop run once (Definitions) before it answers, and subtracts one when it answers. A refresh at N0 completes with refreshed for all four; the requests are the four catalog numbers in catalog order, and at no time were two requests in flight.
 - **A failure does not stop the refresh.** With the requests for ISS answered by throwing a `ClientException`, a refresh at N0 completes with failed for ISS and refreshed for the other three, and the requests are the four catalog numbers in catalog order.
-- **A joined refresh.** The mock client holds every answer until the test releases it. The test asks for a refresh at N0, lets the event loop run once, asks for a second refresh, and then releases the answers. Both refreshes complete with refreshed for all four, and exactly four requests are recorded. A third refresh, asked for after both completed, completes with not due for all four, and no new request is recorded.
+- **A joined refresh.** The mock client holds its answers (Definitions, held answers). The test asks for a refresh at N0, lets the event loop run once, asks for a second refresh, and then releases the answers. Both refreshes complete with refreshed for all four, and exactly four requests are recorded. A third refresh, asked for after both completed, completes with not due for all four, and no new request is recorded.
 - **Nothing happens unless asked.** In an empty cache directory, with the requests for ISS answered with status 500, a refresh at N0 completes. The test clock is then moved to N0 + 7 hours and the event loop is let run ten times; no new request is recorded. Only a refresh asked for afterwards records a new request for ISS.
 
 ### REQ-DAT-004.5 — Data age
@@ -242,6 +252,7 @@ The contract lives in the domain layer and reads no clock; the repository lives 
   - There are exactly three public type declarations: exactly one starts with `abstract interface class `, exactly one starts with `final class `, and exactly one starts with `enum `.
 - **No clock, no I/O, no timer.** The domain library file contains none of `DateTime.now`, `DateTime.timestamp`, `Stopwatch`, `Sync(`, `Timer`, `periodic` and `Future.delayed`.
 - **No catalog number.** The domain library file contains none of the substrings `25544`, `48274`, `38011` or `60133`.
+- **A small contract.** The domain library file contains none of `nameLine`, `statusCode`, `GpFetch` and `Exception`, so the contract neither keeps a failure nor exposes the name line.
 - **Doc lines.** The domain library file contains a line that matches each of:
   - `/// The element repository contract of Wintek: the only way the rest of the app reads orbital elements (specs/req-dat-004.md).`
   - `/// Depends only on orbital_core and the domain layer (Constitution principle 5); lib/data implements it.`
@@ -261,7 +272,7 @@ The contract lives in the domain layer and reads no clock; the repository lives 
   `package:wintek/data/celestrak_gp_client.dart`, `package:wintek/data/element_cache.dart` and `package:wintek/domain/element_repository.dart` are each present. So the repository imports neither Flutter, nor Riverpod, nor `dart:io`, nor `path_provider`, nor `package:http`.
 - **Public surface.**
   - Every declaration line is a public type declaration or a private declaration.
-  - There is exactly one public type declaration. It starts with `final class `, and it contains ` implements ` followed directly by the declared name of the contract.
+  - There is exactly one public type declaration. It starts with `final class `, and it contains ` implements ` followed directly by the declared name of the contract (see Definitions, the names, for the length this needs).
 - **No exception handled.** The repository library file contains none of `try {`, `catch`, `onError`, `handleError`, `runZoned` and `Zone.`, in code or in comments.
 - **Its own clock only.** The repository library file contains `DateTime.now` exactly once, and none of `DateTime.timestamp` and `Stopwatch`.
 - **Nothing scheduled.** The repository library file contains none of `Timer`, `periodic` and `Future.delayed`.
@@ -273,6 +284,7 @@ The contract lives in the domain layer and reads no clock; the repository lives 
   - `/// A refresh sends one request at a time, in catalog order, and a refresh asked for while one runs joins it, so no object is ever written twice at once.`
   - `/// A lookup never reaches the network: it serves memory first, then the cache, so a cold start needs no network (Constitution principle 9).`
   - `/// Every success is written to the cache and served from memory even if the write fails; a failure keeps the element set already served.`
+  - `/// A lookup keeps what it read from the cache only if memory still holds nothing for that object, so it never replaces a newer element set.`
 
 **Factory library file.**
 
@@ -291,9 +303,9 @@ The contract lives in the domain layer and reads no clock; the repository lives 
 - **Public surface.**
   - Every declaration line is a public type declaration or a private declaration.
   - There is exactly one public type declaration, and it starts with `final class `.
-- **The application support directory.** The factory library file contains `getApplicationSupportDirectory`, and none of `getApplicationCacheDirectory`, `getTemporaryDirectory`, `getApplicationDocumentsDirectory`, `getExternal`, `getDownloadsDirectory` and `getLibraryDirectory`.
+- **The application support directory.** The factory library file contains a code line that contains `getApplicationSupportDirectory`; it contains none of `systemTemp`, `Directory.current` and `createTemp`; and it contains none of `getApplicationCacheDirectory`, `getTemporaryDirectory`, `getApplicationDocumentsDirectory`, `getExternal`, `getDownloadsDirectory` and `getLibraryDirectory`.
 - **The directory as resolved.** Every occurrence of `Directory(` in the factory library file is part of an occurrence of `getApplicationSupportDirectory(`. The factory library file contains none of `File(`, `.path`, `.create(`, `.delete(`, `.list(` and `Sync(`. So the factory neither builds a directory of its own, nor touches the disk.
-- **One HTTP client, created and closed here.** The factory library file contains exactly one occurrence of `Client(` or `Client.new` that is not directly preceded by an ASCII letter, and contains `.close(`. So it creates the production client in one place, while the names of the GP client type and of its own members may end in `Client`.
+- **One HTTP client, created and closed here.** The factory library file contains exactly one occurrence in total, counting both substrings, of `Client(` and `Client.new` that is not directly preceded by an ASCII letter, and contains `.close(`. So it creates the production client in one place, while the names of the GP client type and of its own members may end in `Client`.
 - **No clock, no exception handled, nothing scheduled.** The factory library file contains none of `DateTime.now`, `DateTime.timestamp`, `Stopwatch`, `try {`, `catch`, `onError`, `handleError`, `runZoned`, `Zone.`, `Timer`, `periodic` and `Future.delayed`.
 - **No catalog number.** The factory library file contains none of the substrings `25544`, `48274`, `38011` or `60133`.
 - **Doc lines.** The factory library file contains a line that matches each of:
@@ -305,7 +317,7 @@ The rules of REQ-DAT-002.4, as amended by REQ-DAT-004.9, apply to the three libr
 
 ### REQ-DAT-004.8 — Layer rules
 
-The domain layer depends only on the core and on itself, and the presentation layer never reaches the data layer, the network package, the platform directory or the file system (Constitution principles 4 and 5).
+The domain layer depends only on the core and on itself, no library file outside the data layer reaches it except the composition root, and the presentation layer never reaches the data layer, the network package, the platform directory, the file system or JSON parsing (Constitution principles 4 and 5).
 
 **Acceptance (verified by the guard test file).**
 
@@ -314,11 +326,12 @@ The domain layer depends only on the core and on itself, and the presentation la
   - every line that, with leading blank characters removed, starts with `import ` has the import URI `package:orbital_core/orbital_core.dart` or an import URI that starts with `package:wintek/domain/`.
 - **Presentation.** For every presentation library file, every line that, with leading blank characters removed, starts with `import ` or `export ` has an import URI that:
   - starts with `package:` or `dart:`, so no relative import can reach another layer;
-  - does not start with `package:wintek/data/`, `package:http/`, `package:path_provider/` or `dart:io`.
+  - does not start with `package:wintek/data/`, `package:http/`, `package:path_provider/`, `dart:io` or `dart:convert`.
+- **Outside the data layer.** For every library file outside the data layer, no line that, with leading blank characters removed, starts with `import ` or `export ` has an import URI that starts with `package:wintek/data/`, or that starts with neither `package:` nor `dart:` and either starts with `data/` or contains `/data/`.
 
 A presentation layer with no library file meets the rule, as it does when this spec is implemented; that the directory exists is checked by REQ-DAT-004.10 (missing files fail).
 
-`lib/main.dart` is the composition root of the app and is neither a domain nor a presentation library file; it may import the factory library file (req-sta-001).
+`lib/main.dart` is the composition root of the app and is neither a domain, a presentation library file nor a library file outside the data layer; it is the only application library file outside `lib/data` that may import the factory library file (req-sta-001). A later directory, such as one for Riverpod providers, is a library file outside the data layer and reaches the repository only through the contract.
 
 ### REQ-DAT-004.9 — The amendment of REQ-DAT-002.4
 
@@ -334,7 +347,7 @@ The lines below are written between double backticks, so that the single backtic
 - The amended spec file contains a line that matches `` - No application library file other than the client library file contains any of the substrings `HttpClient`, `Socket` or `InternetAddress`. ``.
 - The amended spec file contains no line that matches `` - No application library file other than the client library file contains any of the substrings `package:http/`, `HttpClient`, `Socket` or `InternetAddress`. ``, the line of revision 2 of req-dat-002 that the amendment replaces.
 
-**Acceptance (verified by the GP client guard test file and rows N1 to N7).** The implementation changes the check of the network boundary in the GP client guard test file, and only that check, so that it enforces REQ-DAT-002.4 as amended: the substring `package:http/` is allowed in the client library file and, only on import lines whose import URI is `package:http/http.dart`, in the factory library file; `HttpClient`, `Socket`, `InternetAddress` and `celestrak.org` stay allowed only in the client library file. Every other check of that file, and every failure message tag it prints, is unchanged.
+**Acceptance (verified by the GP client guard test file and rows N1 to N7).** The implementation changes the check of the network boundary in the GP client guard test file, and only that check, so that it enforces REQ-DAT-002.4 as amended: the substring `package:http/` is allowed in the client library file and, only on import lines whose import URI is `package:http/http.dart`, in the factory library file; `HttpClient`, `Socket`, `InternetAddress` and `celestrak.org` stay allowed only in the client library file. Every other check of that file, and every failure message tag it prints, is unchanged. No command proves this: the pull request shows the diff of that file, and the reviewer confirms that only the network-boundary check changed.
 
 ### REQ-DAT-004.10 — Test hygiene
 
@@ -450,7 +463,7 @@ After each row, revert with:
 
     git checkout -- lib test specs docs && git clean -fdq lib test
 
-The `git clean` removes the files that rows G52 to G59 create. After the last row, `git status --porcelain` must print nothing again. If it prints a line, a row left a file behind, and the rows count as not run until the tree is clean.
+The `git clean` removes the files that rows G52 to G59 and G98 to G100 create, and the directory `lib/state` of G98 and G99. After the last row, `git status --porcelain` must print nothing again. If it prints a line, a row left a file behind, and the rows count as not run until the tree is clean.
 
 Every row runs `flutter test` with `--no-pub`, so no row resolves dependencies, needs the network or rewrites `pubspec.lock`.
 
@@ -499,6 +512,7 @@ M rows are mutants that depend on how the repository and the factory are written
 | M33 | Ask for a refresh during the open operation | `REQ-DAT-004.6` |
 | M34 | Close the HTTP client at every call of the close operation | `REQ-DAT-004.6` |
 | M35 | Do not close the HTTP client in the close operation | `REQ-DAT-004.6` |
+| M36 | Record a timeout failure of the GP client as not due | `REQ-DAT-004.3` |
 
 - M27 relies on N0 lying in the past of every run: with the system clock, every arrival instant of the tests is months old, so the case "Fresh" of REQ-DAT-004.2 finds all four objects due. If the run happens on a machine whose clock is set before N0 + 6 hours, M27 counts as not run.
 - M18 changes only the repository; a file that it writes inside the cache directory also fails the case "The window is in memory only".
@@ -602,10 +616,25 @@ The edits are defined as in `specs/req-orb-010.md` (Local negative checks). "The
 | G86 | Delete the file `test/domain/celestrak_tle_snapshot.dart` | `[REQ-DAT-004.10]` |
 | G87 | Delete the file `specs/req-dat-004.md` | `[REQ-DAT-004.10]` |
 | G88 | Run `rm -rf lib/presentation` | `[REQ-DAT-004.10]` |
+| G89 | Append the line `// Directory.systemTemp` to the factory file | `[REQ-DAT-004.7]` |
+| G90 | Append the line `// Directory.current` to the factory file | `[REQ-DAT-004.7]` |
+| G91 | Append the line `// createTemp('wintek')` to the factory file | `[REQ-DAT-004.7]` |
+| G92 | Run `sed -i '/getApplicationSupportDirectory/{/^[[:blank:]]*\/\//!s/^/\/\/ /}' lib/data/element_repository_factory.dart` (every code line that names the function becomes a comment) | `[REQ-DAT-004.7]` |
+| G93 | Append the line `// nameLine` to the domain file | `[REQ-DAT-004.7]` |
+| G94 | Append the line `// statusCode` to the domain file | `[REQ-DAT-004.7]` |
+| G95 | Append the line `// GpFetchSuccess` to the domain file | `[REQ-DAT-004.7]` |
+| G96 | Append the line `// Exception` to the domain file | `[REQ-DAT-004.7]` |
+| G97 | Delete the line `/// A lookup keeps what it read from the cache only if memory still holds nothing for that object, so it never replaces a newer element set.` from the repository file | `[REQ-DAT-004.7]` |
+| G98 | Create the file `lib/state/extra.dart` with the line `import 'package:wintek/data/element_cache.dart';` | `[REQ-DAT-004.8]` |
+| G99 | Create the file `lib/state/extra.dart` with the line `import '../data/element_cache.dart';` | `[REQ-DAT-004.8]` |
+| G100 | Create the file `lib/presentation/extra.dart` with the line `import 'dart:convert';` | `[REQ-DAT-004.8]` |
 
 Inside the table, `\|` is a single pipe. In G61 and G63 the text between double backticks is the text to replace or insert, single backticks included; in G61 the replaced text starts with one space, and the replacement is that one space.
 
-- In G2 to G6, G14 to G19, G39 to G41, G51, G56, G59, G65, G66, G70, G75 and G80 a file may no longer compile or analyze cleanly. The guard reads text and runs on its own.
+- In G2 to G6, G14 to G19, G39 to G41, G51, G56, G59, G65, G66, G70, G75, G80 and G92 a file may no longer compile or analyze cleanly. The guard reads text and runs on its own.
+- G92 leaves every comment line as it is and turns each code line that contains `getApplicationSupportDirectory` into a comment, so the name survives only in comments; confirm with `git diff` that at least one line changed.
+- G93 to G96 isolate the tokens of the rule "A small contract" one by one, and G89 to G91 those of the rule "The application support directory".
+- G98 and G99 create a directory outside `lib/presentation`, so only the rule "Outside the data layer" can report them.
 - G19 can leave `@override` on members that no longer override anything; that is a warning, not an error, so the guard still runs.
 - G25 adds a second `DateTime.now` to the repository file; the rule "Its own clock only" counts exactly one.
 - G42 also removes the one required occurrence of `getApplicationSupportDirectory`, and G43 to G45 isolate the forbidden directory functions one by one.
@@ -634,7 +663,7 @@ No row removes `import 'support/repo_root.dart';` from the guard test file. That
 - N4 and N5 prove that the factory file may contain `package:http/` only on import lines of `package:http/http.dart`. N6 and N7 prove that the amendment opens no other file. In N5 to N7 a file may no longer compile; the guard reads text.
 - The G rows of req-dat-002 that edit `lib/main.dart` or the catalog file still report `[REQ-DAT-002.4]` with the amended guard; the pull request checklist records the result of G21 to G26 of req-dat-002, run once again.
 
-**Pull request checklist.** The description of the pull request that implements this spec lists V0–V17, with the hash S and the merge base of V10, M1–M35 with their diffs, G0 and G1–G88 with the diff of G19, N0 and N1–N7, and G21 to G26 of req-dat-002, each with its observed result. A pull request without this list is incomplete regardless of its check status. This checklist is the one manual step of this spec: a reviewer reads it, and no command verifies it.
+**Pull request checklist.** The description of the pull request that implements this spec lists V0–V17, with the hash S and the merge base of V10, M1–M36 with their diffs, G0 and G1–G100 with the diff of G19, N0 and N1–N7, and G21 to G26 of req-dat-002, each with its observed result, and the diff of the GP client guard test file (REQ-DAT-004.9). A pull request without this list is incomplete regardless of its check status. This checklist is the one manual step of this spec: a reviewer reads it, and no command verifies it. The reviewer also confirms two rules that no test can prove: the diff of the GP client guard test file changes only its network-boundary check (REQ-DAT-004.9), and a lookup keeps a cache entry only when memory holds nothing for its object (Definitions, lookup).
 
 **Record of progress.** The checklist is also the record of progress of the implementation that AGENTS.md asks for ("mark its progress"): the implementation changes neither the spec file, except as V10 allows, nor the amended spec file, nor `docs/roadmap.md`. The roadmap checkbox of this row is set by the QA workflow, outside the implementation.
 
@@ -652,7 +681,7 @@ These cases are normative where a requirement above tests them, and informative 
 - **The device clock moved back (informative).** An arrival instant in the future counts as due (REQ-DAT-004.2). An attempt window whose start is now in the future is closed, by the definition of an attempt window, so an object can be attempted again; the new attempt opens a window at the new clock. Neither case can make the repository poll, because only a refresh sends a request.
 - **The cache deleted while the app runs.** Lookups keep serving memory (REQ-DAT-004.1, kept in memory), and the next success writes the cache again (Constitution principle 11).
 - **A cache write that fails.** The success is served from memory and the outcome is refreshed (REQ-DAT-004.3). After a restart, the cache still holds the older element set, which is then due again.
-- **A lookup and a refresh of the same object at once (informative).** A refresh may write the cache file of an object while a lookup reads it. On Android the read keeps the old document; on Windows the write may complete with `false` (req-dat-003, edge case "A read and a write of the same object"), and the success is still served from memory. Neither changes an outcome.
+- **A lookup and a refresh of the same object at once.** A refresh may write the cache file of an object while a lookup reads it. On Android the read keeps the old document; on Windows the write may complete with `false` (req-dat-003, edge case "A read and a write of the same object"), and the success is still served from memory. Neither changes an outcome. A lookup whose read completes after the refresh kept its success in memory does not replace it (Definitions, lookup); otherwise the older entry would be served, and the attempt window would keep it for 6 hours. The timing of this race depends on the file system, so no test produces it; the doc line of REQ-DAT-004.7 and the reviewer cover it.
 - **A refresh asked for during a refresh.** It joins the running refresh and completes with its outcomes (REQ-DAT-004.4), so no object is ever fetched or written twice at once.
 - **A refresh asked for after the handle was closed (informative).** The HTTP client is closed, so a fetch fails and the due objects complete with failed. req-sta-001 never refreshes through a closed handle.
 - **A refresh still running when the handle is closed (informative).** The fetch in flight fails or completes, and the refresh completes with the outcomes it reached. No timer or callback outlives the refresh.
@@ -661,8 +690,8 @@ These cases are normative where a requirement above tests them, and informative 
 - **Other files in the application support directory (informative).** Other plugins or a later settings file may store files there. The cache ignores every file that is not its own (req-dat-003, edge case "Other files in the cache directory").
 - **The same element lines again (informative).** CelesTrak may serve the same element set as before, with the same epoch. The success is still a success: it is written, its arrival instant is new, and the data age restarts. The data age is the age of the download, not of the element set (req-dat-003); showing the epoch is out of scope.
 - **A programming error.** The repository handles no exception (REQ-DAT-004.7), so a Dart `Error` or an unexpected exception propagates out of a lookup or a refresh, and is never reported as an outcome. `OrbitalElements.fromTle` cannot throw on the lines of a success or an entry, because both were already accepted by it (req-dat-002, req-dat-003).
-- **An extra public method (informative).** The public-surface rules count top-level declarations, not members. A public method added to the contract, the repository or the handle is not seen by the guard; the reviewer checks the types against the decision "A small contract".
-- **A presentation layer that does not exist yet.** `lib/presentation` holds only `.gitkeep` when this spec is implemented, so the presentation rule of REQ-DAT-004.8 holds with no file; rows G55 to G59 prove that it is checked. A missing directory fails the guard (REQ-DAT-004.10).
+- **An extra public method (informative).** The public-surface rules count top-level declarations, not members. The rule "A small contract" of REQ-DAT-004.7 keeps failures, status codes and the name line out of the domain library file; any other public method added to the contract, the repository or the handle is not seen by the guard, and the reviewer checks the types against the decision "A small contract".
+- **A presentation layer that does not exist yet.** `lib/presentation` holds only `.gitkeep` when this spec is implemented, so the presentation rule of REQ-DAT-004.8 holds with no file; rows G55 to G59 and G100 prove that it is checked. A missing directory fails the guard (REQ-DAT-004.10).
 - **Time zone of the runner (informative).** No instant of this spec is a local instant except N0 converted to local time in REQ-DAT-004.5, whose data age is the same at every offset; the tests do not depend on the offset of the machine.
 - **The system clock of the runner (informative).** The tests never read it. M27 needs it to be later than N0 + 6 hours, which holds for every run after the drafting of this spec.
 - **Network or CI failure while verifying.** No check of this spec uses CelesTrak, calls `path_provider` or builds an APK. A failed `flutter pub get`, a timeout, a runner out of memory or a failed analysis is handled as req-inf-002 defines and never counts as a pass. An M, G or N row whose output shows a compilation or resolution error of the file it targets, instead of the expected tag, counts as not run, never as a pass, except where the notes of a table allow it.
