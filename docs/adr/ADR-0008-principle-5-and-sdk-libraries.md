@@ -1,6 +1,6 @@
 # ADR-0008 — Reading of Constitution principle 5 for Dart SDK libraries
 
-- **Status:** Proposed (2026-11-16), with revision 4 of `specs/req-dat-004.md`, amended with revision 6. The developer accepts it before that spec merges into `main`; the guard of req-dat-004 then requires this line to start with `- **Status:** Accepted`.
+- **Status:** Accepted (2026-11-16, by the developer, with revision 6 of `specs/req-dat-004.md`, before it was implemented). Proposed with revision 4 of that spec and amended with revision 6; the guard of req-dat-004 requires this line to start with `- **Status:** Accepted`.
 - **Date:** 2026-11-16
 - **Relates to:** Constitution principles 3 (the math core is pure Dart), 4 (the UI only renders) and 5 (dependencies point inward); ADR-0001 (baseline packages); `specs/req-dat-004.md`, REQ-DAT-004.8
 
