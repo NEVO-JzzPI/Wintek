@@ -1,6 +1,6 @@
 # req-dat-004 — Element repository and refresh policy
 
-- **Status:** Draft (revision 4), after the third QA audit, pending a fourth audit. The first audit was made by a session that did not draft revision 1, the second by a session that did not draft revision 2, and the third by a session that did not draft revision 3. Revision 4 was drafted by the session that made the third audit, so the fourth should be made by a session that did not draft revision 4.
+- **Status:** Draft (revision 5), after the fourth QA audit, pending a fifth audit. The first audit was made by a session that did not draft revision 1, the second by a session that did not draft revision 2, and the third by a session that did not draft revision 3. The fourth audit was made by the session that drafted revision 4, so it was not independent, and revision 5 was drafted by that same session; the fifth audit should therefore be made by a session that drafted neither revision 4 nor revision 5.
   - **Approved before drafting (2026-11-15):**
     - the refresh threshold is 6 hours, measured from the arrival instant that the GP client stamped and the cache stored; an element set exactly 6 hours old is due;
     - every attempt, successful or failed, opens a window of 6 hours for its object, kept in memory only; within that window no request is sent for that object, and a new start of the app begins with no window (Constitution principles 10 and 11);
@@ -31,6 +31,9 @@
     - Decided by the developer: 4 (every duration is measured on the wall clock that the repository reads; ADR-0007 decision 1 states it and accepts a jump of the device clock), 5 (ADR-0008 is proposed with this revision and records the reading of Constitution principle 5 that REQ-DAT-004.8 makes; REQ-DAT-004.9 requires it to be accepted; G157 to G159).
     - Fixed in the text: 2 (an M row is any change with the stated effect, in the form the row names, and the reviewer confirms its effect from the diff), 6 (the obligations on later specs are listed below as preconditions, and Blocks marks them).
     - No change needed: 10, 14 and 15.
+  - **Approved for revision 5 (2026-11-16):** finding 1 of the fourth QA audit, the only critical one.
+    - Fixed in requirements and tests: 1 (an import statement is well formed only if no URI in it can be decoded, joined or normalized into another one: no backslash, no `%`, no adjacent string literals, no scheme other than lowercase `package:` and `dart:`, no empty segment and no `.` or `..` segment in a `package:` or `dart:` URI; the forbidden prefixes of REQ-DAT-004.8 are compared without regard to ASCII case; G161 to G170 and P7).
+    - Open, not addressed by revision 5: findings 2, 3, 5 and 7 of the fourth audit (an import statement that runs past a trailing comment, the list of ADR-0008 against its own criterion, the note of G156, and the hint of `whenComplete` in the edge case "A programming error").
   - **Beyond roadmap row 16:** the amendment of REQ-DAT-002.4 (REQ-DAT-004.9), which req-dat-002 assigned to this spec ("Creating the HTTP client outside the client library file needs an amendment of REQ-DAT-002.4 in that spec"); the handle that creates the production HTTP client and closes it once, which req-dat-002 also assigned to this spec ("whoever creates it owns it"); the layer rules of REQ-DAT-004.8, which req-dat-001 and req-dat-002 assigned to this spec; the correction of the Blocks entry of req-dat-004 in `specs/req-dat-002.md`; ADR-0007, which the Constitution requires for the reading of principle 10 that the attempt window makes; ADR-0008, which it requires for the reading of principle 5 that REQ-DAT-004.8 makes; and the preconditions on later specs marked in Blocks. Otherwise nothing.
   - **Preconditions on later specs.** The guarantees of this spec hold only if the specs that use it meet the preconditions marked "Precondition" in Blocks. This spec states them and tests none of them; each later spec adopts them in its own requirements and tests, or, if it cannot, amends this spec first (Constitution principle 2). They are: one handle per run (req-sta-001), because two repositories on one directory could write the same cache file at once; an unknown data age shown as unknown (req-ui-003) and treated as stale (req-ui-004), because the contract reports `null` for an arrival instant that cannot be trusted.
 - **Roadmap row:** 16 of 33 (MVP)
@@ -89,6 +92,7 @@ The repository is deliberately passive. It sends a request only when it is asked
 - **Only the composition root reaches the data layer.** No application library file outside `lib/data` imports the data layer, except `lib/main.dart`, the composition root, so a later directory such as `lib/state` cannot reach it either. `lib/main.dart` exports nothing, and no library file outside the data layer imports it, so the data layer cannot be reached through it. A relative import is judged by the file it names, so a directory named `data` inside another layer is not the data layer. The rule keeps HTTP and file I/O out of every provider (principle 4), makes every later layer depend on the contract and not on its implementation (principle 5), and lets the tests of req-sta-001 replace the repository with a fake that needs no directory and no HTTP client. The cost for req-sta-001 is that `lib/main.dart` opens the handle and hands the contract to the providers.
 - **The UI only renders.** No presentation library file imports the data layer, `package:http`, `path_provider`, `dart:io` or `dart:convert` (principle 4: no HTTP and no JSON parsing). A presentation library file may import another one by a relative URI with no `..` segment, which cannot leave `lib/presentation`; any other import is a `package:` or `dart:` URI. The rule is checked now, while `lib/presentation` is still empty, so that the first widget already meets it. ADR-0008 decision 4 records this reading of principle 4.
 - **Every URI of an import is checked.** A text guard reads an import as written, so the rules read every URI of an import statement, including the URIs of a conditional import and a statement that `dart format` wraps over several lines, and reject a double quote in an import statement, which would hide its URI from the guard. `flutter analyze` accepts both forms, because `prefer_single_quotes` is not enabled.
+- **A URI is read as written, so it must be written plainly.** Dart decodes and normalizes an import URI before it resolves it, and a text guard does neither. `flutter analyze` resolves, for example, `'package:wintek/./data/element_cache.dart'`, `'package:wintek/domain/../data/element_cache.dart'`, `'package:wintek/' 'data/element_cache.dart'` (two adjacent string literals), `'package:wintek/data/element_cache.dart'`, `'package:wintek/%64ata/element_cache.dart'` and `'Package:wintek/data/element_cache.dart'` to the data layer, and on a file system that ignores case, such as that of Windows, also `'package:wintek/Data/element_cache.dart'` and `'../Data/element_cache.dart'`; `'..//data/element_cache.dart'` resolves through its empty segment. The rules therefore accept only well-formed import statements (Definitions), whose URIs need no decoding, joining or normalization other than the resolution of a relative URI, and compare the forbidden prefixes without regard to ASCII case. A conditional import stays well formed, but a condition with a quoted value, such as `if (dart.library.io == 'true')`, is rejected; the app needs none.
 - **Never polling.** Nothing in the repository, the opener or the contract starts a timer, a periodic stream or a delayed future (principle 10), in any form: the guard forbids the substring `delayed`, so `Future<void>.delayed` and a tear-off of `Future.delayed` are caught like `Future.delayed`. A refresh happens only when it is asked for.
 - **Off the frame path.** A lookup and a refresh are asynchronous; the contract is never called from a painter (principle 13). The data age is computed from values already in memory, for an instant that the caller passes, so no clock is read on the frame path.
 - **Offline is a feature.** With a cached element set and no network, a lookup serves the cached set, a refresh completes with failed for that object, and the arrival instant stays visible through the data age (principle 9).
@@ -106,7 +110,15 @@ These definitions are normative. Blank characters, application library files, li
 - **Code line:** a line whose text, with leading blank characters removed, does not start with `//`.
 - **Import URI:** for a line whose text, with leading blank characters removed, starts with `import ` or `export `, the text between its first two single quotes.
 - **Import statement:** in a library file, the lines from a line whose text, with leading blank characters removed, starts with `import ` or `export `, up to and including the first line, that one or a later one, whose text, with trailing blank characters removed, ends with `;`; or up to the last line of the file when no such line follows.
-- **URIs of an import statement:** the texts between the first and second, the third and fourth, and every later pair of single quotes of the statement, read as its lines joined by LF. A conditional import therefore has one URI per configuration, and a statement that `dart format` wraps keeps its URI. A statement is **well quoted** when it contains no double quote (`"`) and an even number, at least two, of single quotes.
+- **URIs of an import statement:** the texts between the first and second, the third and fourth, and every later pair of single quotes of the statement, read as its lines joined by LF. A conditional import therefore has one URI per configuration, and a statement that `dart format` wraps keeps its URI. The rules never decode or normalize a URI; a well-formed statement leaves nothing to decode or normalize.
+- **Well formed:** an import statement is well formed when all of these hold:
+  - it contains none of the characters `"` (double quote), `\` (backslash) and `%`, so no URI hides in double quotes or in an escape;
+  - it contains an even number, at least two, of single quotes;
+  - between each URI and the next, the text of the statement, with blank characters and LF removed, starts with `if(`, so two URIs are never adjacent string literals, plain or raw, and only a conditional import has more than one URI;
+  - every URI starts with `package:` or `dart:`, in lower case, or contains no `:`; and no URI starts with `/`;
+  - no URI contains `//`, so no URI has an empty segment;
+  - no URI that starts with `package:` or `dart:` has a segment equal to `.` or `..`, where its segments are the parts, between `/` characters, of the text after the scheme.
+- **Ignoring case:** a URI or a resolved path starts with, or is, a text ignoring case when it does so after both are converted to ASCII lower case.
 - **Relative URI:** a URI of an import statement that contains no `:` and does not start with `/`.
 - **Resolved path:** of a relative URI in a library file F, the path that it names from the repository root: start with the segments of the directory of F relative to the repository root (for example `lib` and `state` for `lib/state/extra.dart`) and append the segments of the URI, where segments are the parts between `/` characters; then, in order, drop each segment equal to `.`, and drop each segment equal to `..` together with the last segment kept before it; join the kept segments with `/`. For example, `../data/element_cache.dart` in `lib/state/extra.dart` resolves to `lib/data/element_cache.dart`, and `data/chart.dart` in `lib/presentation/extra.dart` resolves to `lib/presentation/data/chart.dart`.
 - **Inner relative URI:** a relative URI that is not empty and has no segment equal to `..`. From a presentation library file, it can only name a file under `lib/presentation`.
@@ -280,7 +292,7 @@ The contract lives in the domain layer and reads no clock; the repository lives 
 **Domain library file.**
 
 - **Placement.** The domain library file exists.
-- **Imports.** No line of the domain library file, with leading blank characters removed, starts with `export ` or `part `. Every import statement is well quoted, every URI of every import statement is one of these, and both are present:
+- **Imports.** No line of the domain library file, with leading blank characters removed, starts with `export ` or `part `. Every import statement is well formed, every URI of every import statement is one of these, and both are present:
   - `package:orbital_core/orbital_core.dart`;
   - `package:wintek/domain/satellite_catalog.dart`.
 - **Public surface.**
@@ -297,7 +309,7 @@ The contract lives in the domain layer and reads no clock; the repository lives 
 **Repository library file.**
 
 - **Placement.** The repository library file exists.
-- **Imports.** No line of the repository library file, with leading blank characters removed, starts with `export ` or `part `. Every import statement is well quoted, and every URI of every import statement is one of these:
+- **Imports.** No line of the repository library file, with leading blank characters removed, starts with `export ` or `part `. Every import statement is well formed, and every URI of every import statement is one of these:
   - `dart:async`;
   - `package:orbital_core/orbital_core.dart`;
   - `package:wintek/data/celestrak_gp_client.dart`;
@@ -325,7 +337,7 @@ The contract lives in the domain layer and reads no clock; the repository lives 
 **Factory library file.**
 
 - **Placement.** The factory library file exists.
-- **Imports.** No line of the factory library file, with leading blank characters removed, starts with `export ` or `part `. Every import statement is well quoted, every URI of every import statement is one of these, and all but `dart:async` are each present:
+- **Imports.** No line of the factory library file, with leading blank characters removed, starts with `export ` or `part `. Every import statement is well formed, every URI of every import statement is one of these, and all but `dart:async` are each present:
   - `dart:async`;
   - `dart:io`;
   - `package:http/http.dart`;
@@ -357,19 +369,19 @@ The domain layer depends only on the core, on itself and on the Dart SDK librari
 
 **Acceptance (verified by the guard test file).**
 
-- **Well quoted.** Every import statement of every domain library file, every presentation library file and every library file outside the data layer is well quoted (Definitions), so no URI hides from the rules below.
+- **Well formed.** Every import statement of every domain library file, every presentation library file and every library file outside the data layer is well formed (Definitions), so no URI hides from the rules below and no URI needs decoding or normalization.
 - **Domain.** For every domain library file:
   - no line, with leading blank characters removed, starts with `export ` or `part `;
-  - every URI of every import statement is `package:orbital_core/orbital_core.dart`, starts with `package:wintek/domain/`, or starts with `dart:` and is not a forbidden SDK library (Definitions).
+  - every URI of every import statement is `package:orbital_core/orbital_core.dart`, starts with `package:wintek/domain/`, or starts with `dart:` and is not a forbidden SDK library (Definitions), ignoring case.
 - **Presentation.** For every presentation library file, every URI of every import statement:
   - starts with `package:` or `dart:`, or is an inner relative URI (Definitions), so no relative import can reach another layer;
-  - does not start with `package:wintek/data/`, `package:http/`, `package:path_provider/`, `dart:io` or `dart:convert`.
+  - does not start with `package:wintek/data/`, `package:http/`, `package:path_provider/`, `dart:io` or `dart:convert`, ignoring case.
 - **Outside the data layer.** For every library file outside the data layer, no URI of any import statement:
-  - starts with `package:wintek/data/` or is `package:wintek/main.dart`;
-  - is a relative URI whose resolved path (Definitions) starts with `lib/data/` or is `lib/main.dart`.
+  - starts with `package:wintek/data/` or is `package:wintek/main.dart`, ignoring case;
+  - is a relative URI whose resolved path (Definitions) starts with `lib/data/` or is `lib/main.dart`, ignoring case.
 - **The composition root.** `lib/main.dart` exists, and no line of it, with leading blank characters removed, starts with `export ` or `part `, so the data layer cannot be reached through it.
 
-A presentation layer with no library file meets the rule, as it does when this spec is implemented; that the directory exists is checked by REQ-DAT-004.10 (missing files fail). The domain library file of this spec keeps its own, narrower list of imports (REQ-DAT-004.7). Rows P1 to P6 prove that the guard accepts what this rule allows. ADR-0008 records the reading of Constitution principles 4 and 5 that this rule makes.
+A presentation layer with no library file meets the rule, as it does when this spec is implemented; that the directory exists is checked by REQ-DAT-004.10 (missing files fail). The domain library file of this spec keeps its own, narrower list of imports (REQ-DAT-004.7). Rows P1 to P7 prove that the guard accepts what this rule allows. ADR-0008 records the reading of Constitution principles 4 and 5 that this rule makes.
 
 `lib/main.dart` is the composition root of the app and is neither a domain, a presentation library file nor a library file outside the data layer; it is the only application library file outside `lib/data` that may import the factory library file (req-sta-001). A later directory, such as one for Riverpod providers, is a library file outside the data layer and reaches the repository only through the contract. A directory named `data` inside another layer, such as `lib/presentation/data`, is not the data layer, because a relative URI is judged by its resolved path.
 
@@ -507,7 +519,7 @@ After each row, revert with:
 
     git checkout -- lib test specs docs && git clean -fdq lib test
 
-The `git clean` removes the files that rows G52 to G59, G98 to G100, G148 to G151, G153, G154, G156 and P1 to P6 create, and the directory `lib/state` that some of them create. After the last row, `git status --porcelain` must print nothing again. If it prints a line, a row left a file behind, and the rows count as not run until the tree is clean.
+The `git clean` removes the files that rows G52 to G59, G98 to G100, G148 to G151, G153, G154, G156, G161 to G170 and P1 to P7 create, and the directory `lib/state` that some of them create. After the last row, `git status --porcelain` must print nothing again. If it prints a line, a row left a file behind, and the rows count as not run until the tree is clean.
 
 Every row runs `flutter test` with `--no-pub`, so no row resolves dependencies, needs the network or rewrites `pubspec.lock`.
 
@@ -744,6 +756,16 @@ The edits are defined as in `specs/req-orb-010.md` (Local negative checks). "The
 | G158 | Run `sed -i 's/$/\r/' docs/adr/ADR-0008-principle-5-and-sdk-libraries.md` (CRLF in the ADR-0008 file) | `[REQ-DAT-004.10]` |
 | G159 | Delete the file `docs/adr/ADR-0008-principle-5-and-sdk-libraries.md` | `[REQ-DAT-004.10]` |
 | G160 | Delete the file `lib/main.dart` | `[REQ-DAT-004.8]` |
+| G161 | Create the file `lib/state/extra.dart` with the line `import 'package:wintek/./data/element_cache.dart';` | `[REQ-DAT-004.8]` |
+| G162 | Create the file `lib/domain/extra.dart` with the line `import 'package:wintek/domain/../data/element_cache.dart';` | `[REQ-DAT-004.8]` |
+| G163 | Create the file `lib/state/extra.dart` with the line `import 'package:wintek/' 'data/element_cache.dart';` | `[REQ-DAT-004.8]` |
+| G164 | Create the file `lib/state/extra.dart` with the line `import 'package:wintek/' r'data/element_cache.dart';` | `[REQ-DAT-004.8]` |
+| G165 | Create the file `lib/state/extra.dart` with the line `import 'package:wintek/data/element_cache.dart';` | `[REQ-DAT-004.8]` |
+| G166 | Create the file `lib/state/extra.dart` with the line `import 'package:wintek/%64ata/element_cache.dart';` | `[REQ-DAT-004.8]` |
+| G167 | Create the file `lib/state/extra.dart` with the line `import 'Package:wintek/data/element_cache.dart';` | `[REQ-DAT-004.8]` |
+| G168 | Create the file `lib/state/extra.dart` with the line `import 'package:wintek/Data/element_cache.dart';` | `[REQ-DAT-004.8]` |
+| G169 | Create the file `lib/state/extra.dart` with the line `import '../Data/element_cache.dart';` | `[REQ-DAT-004.8]` |
+| G170 | Create the file `lib/state/extra.dart` with the line `import '..//data/element_cache.dart';` | `[REQ-DAT-004.8]` |
 
 Inside the table, `\|` is a single pipe. In G61 and G63 the text between double backticks is the text to replace or insert, single backticks included; in G61 the replaced text starts with one space, and the replacement is that one space.
 
@@ -753,6 +775,7 @@ Inside the table, `\|` is a single pipe. In G61 and G63 the text between double 
 - G136 and G139 are expected to report `[REQ-DAT-004.10]`; the doc lines and the title line still match, because a trailing CR is a blank character. G138 leaves the guard test file compilable, because Dart ignores a leading BOM.
 - G142 adds a tag of REQ-DAT-004.2 in a form that is not the line `// REQ-DAT-004.2`, which only the rule of REQ-DAT-004.10 on tags of REQ-DAT-004.1 to .6 in the guard test file catches.
 - G144, G147 and G157 change one line of a file that this spec only reads, and G141, G143, G146, G159 and G160 remove files; `git checkout -- lib test specs docs` restores them. G155 and G160 change `lib/main.dart`, which the implementation never changes; the revert restores it.
+- G161 to G170 write a URI that Dart resolves to the data layer but whose text does not name it: G161 and G162 by a `.` or `..` segment in a `package:` URI, G163 and G164 by adjacent string literals, plain and raw, G165 by an escape, G166 by percent-encoding, G167 by an upper-case scheme, G168 and G169 by an upper-case segment, which a file system that ignores case resolves, and G170 by an empty segment. Each passes a guard that compares URIs as written and case-sensitively, and fails one that requires well-formed statements and ignores case. G165 must contain a backslash: write it with `printf 'import %s;\n' "'package:wintek/\\u0064ata/element_cache.dart'" > lib/state/extra.dart` or an editor, and confirm with `grep -cF 'd' lib/state/extra.dart`, which prints `1`, that the backslash is in the file, because some shells and tools expand `\u` escapes.
 - G148 to G152 hide a URI from the import URI of a line: G148 by double quotes, G149, G150 and G152 by a conditional import, and G151 by a conditional import that `dart format` would wrap. Each passes a guard that reads only the first URI of a line, and fails one that reads every URI of an import statement. In G148 to G152 a file may not compile; the guard reads text.
 - G153 and G154 reach `lib/main.dart` from outside the data layer, G155 makes `lib/main.dart` export the data layer, and G156 reaches the data layer with a `.` segment that only the resolved path sees through. G160 also fails other guards and the app; only the tag of this spec is read here.
 - G92 leaves every comment line as it is and turns each code line that contains `getApplicationSupportDirectory` into a comment, so the name survives only in comments; confirm with `git diff` that at least one line changed.
@@ -775,8 +798,10 @@ Inside the table, `\|` is a single pipe. In G61 and G63 the text between double 
 | P4 | Create the file `lib/presentation/extra.dart` with the lines `import 'package:flutter/widgets.dart'` and, indented by four spaces, `show Text;` | `[REQ-DAT-004.8]` |
 | P5 | Create the file `lib/presentation/extra.dart` with the line `import 'data/chart.dart';` | `[REQ-DAT-004.8]` |
 | P6 | Create the file `lib/state/extra.dart` with the line `import 'data/chart.dart';` | `[REQ-DAT-004.8]` |
+| P7 | Create the file `lib/presentation/extra.dart` with the line `import 'widgets/marker.dart' if (dart.library.io) 'widgets/marker_io.dart';` | `[REQ-DAT-004.8]` |
 
-- P1 to P6 name files that do not exist, so the app may not compile; the guard reads text. The revert command of the G rows also reverts them.
+- P7 is a conditional import whose URIs are both allowed, so the rule against adjacent string literals does not reject a conditional import.
+- P1 to P7 name files that do not exist, so the app may not compile; the guard reads text. The revert command of the G rows also reverts them.
 - P4 is an import statement over two lines, as `dart format` writes a long `show` clause; P5 and P6 import a directory named `data` inside another layer, which the resolved path keeps out of the data layer.
 
 No row removes `import 'support/repo_root.dart';` from the guard test file. That edit stops the file from compiling, so V3 fails without printing any tag; the import line check is kept as a second line of defence.
@@ -800,7 +825,7 @@ No row removes `import 'support/repo_root.dart';` from the guard test file. That
 - N4 and N5 prove that the factory file may contain `package:http/` only on import lines of `package:http/http.dart`. N6 and N7 prove that the amendment opens no other file. In N5 to N7 a file may no longer compile; the guard reads text.
 - The G rows of req-dat-002 that edit `lib/main.dart` or the catalog file still report `[REQ-DAT-002.4]` with the amended guard; the pull request checklist records the result of G21 to G26 of req-dat-002, run once again.
 
-**Pull request checklist.** The description of the pull request that implements this spec lists V0–V17, with the hash S and the merge base of V10 and the UTC offset of the machine that ran V1 and M40 at a non-zero offset, M1–M42 with their diffs, G0 and G1–G160 with the diff of G19, P1–P6, N0 and N1–N7, and G21 to G26 of req-dat-002, each with its observed result, and the diff of the GP client guard test file (REQ-DAT-004.9). A pull request without this list is incomplete regardless of its check status. This checklist is the one manual step of this spec: a reviewer reads it, and no command verifies it. The reviewer also confirms three rules that no test can prove: the diff of the GP client guard test file changes only its network-boundary check (REQ-DAT-004.9); a lookup keeps a cache entry only when memory holds nothing for its object (Definitions, lookup); and the contract offers only a lookup and a refresh, the served element set only its tracked object, its `OrbitalElements`, its arrival instant and its data age, and the handle only its repository and its close operation (decision "A small contract"; edge case "An extra public method"). A text guard sees top-level declarations, not members, so these three stay with the reviewer.
+**Pull request checklist.** The description of the pull request that implements this spec lists V0–V17, with the hash S and the merge base of V10 and the UTC offset of the machine that ran V1 and M40 at a non-zero offset, M1–M42 with their diffs, G0 and G1–G170 with the diff of G19, P1–P7, N0 and N1–N7, and G21 to G26 of req-dat-002, each with its observed result, and the diff of the GP client guard test file (REQ-DAT-004.9). A pull request without this list is incomplete regardless of its check status. This checklist is the one manual step of this spec: a reviewer reads it, and no command verifies it. The reviewer also confirms three rules that no test can prove: the diff of the GP client guard test file changes only its network-boundary check (REQ-DAT-004.9); a lookup keeps a cache entry only when memory holds nothing for its object (Definitions, lookup); and the contract offers only a lookup and a refresh, the served element set only its tracked object, its `OrbitalElements`, its arrival instant and its data age, and the handle only its repository and its close operation (decision "A small contract"; edge case "An extra public method"). A text guard sees top-level declarations, not members, so these three stay with the reviewer.
 
 **Record of progress.** The checklist is also the record of progress of the implementation that AGENTS.md asks for ("mark its progress"): the implementation changes neither the spec file, except as V10 allows, nor the amended spec file, nor `docs/roadmap.md`. The roadmap checkbox of this row is set by the QA workflow, outside the implementation.
 
